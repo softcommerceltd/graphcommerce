@@ -1,4 +1,5 @@
-import { Box, Container, SxProps, Theme, Typography } from '@mui/material'
+import type { SxProps, Theme } from '@mui/material'
+import { Box, Container, Typography } from '@mui/material'
 import React from 'react'
 import { extendableComponent } from '../Styles'
 import { responsiveVal } from '../Styles/responsiveVal'
@@ -36,6 +37,7 @@ export function FullPageMessage(props: FullPageMessageProps) {
         }),
         !disableMargin && {
           marginTop: responsiveVal(50, 250),
+          marginBottom: responsiveVal(50, 250),
         },
         ...(Array.isArray(sx) ? sx : [sx]),
       ]}

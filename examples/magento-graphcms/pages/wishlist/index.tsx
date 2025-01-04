@@ -1,11 +1,7 @@
 import { WaitForQueries } from '@graphcommerce/ecommerce-ui'
 import { PageOptions } from '@graphcommerce/framer-next-pages'
 import { PageMeta, StoreConfigDocument } from '@graphcommerce/magento-store'
-import {
-  useWishlistItems,
-  WishlistItemActionCard,
-  WishlistItemActionCardProps,
-} from '@graphcommerce/magento-wishlist'
+import { useWishlistItems, WishlistItemActionCard } from '@graphcommerce/magento-wishlist'
 import {
   GetStaticProps,
   iconHeart,
@@ -17,7 +13,7 @@ import {
 } from '@graphcommerce/next-ui'
 import { i18n } from '@lingui/core'
 import { Trans } from '@lingui/react'
-import { CircularProgress, Container, Theme, useMediaQuery } from '@mui/material'
+import { CircularProgress, Container } from '@mui/material'
 import { LayoutOverlay, LayoutOverlayProps } from '../../components'
 import { graphqlSharedClient } from '../../lib/graphql/graphqlSsrClient'
 
@@ -26,12 +22,6 @@ type GetPageStaticProps = GetStaticProps<LayoutOverlayProps, Props>
 
 function WishlistPage() {
   const wishlistItems = useWishlistItems()
-
-  const isMobile = useMediaQuery<Theme>((theme) => theme.breakpoints.down('md'), {
-    defaultMatches: false,
-  })
-
-  const size: WishlistItemActionCardProps['size'] = isMobile ? 'small' : 'large'
 
   return (
     <>
@@ -73,7 +63,7 @@ function WishlistPage() {
           ) : (
             <>
               {wishlistItems.items.map((item) => (
-                <WishlistItemActionCard key={item.id} item={item} size={size} />
+                <WishlistItemActionCard key={item.id} item={item} />
               ))}
             </>
           )}
@@ -92,8 +82,8 @@ WishlistPage.pageOptions = pageOptions
 
 export default WishlistPage
 
-export const getStaticProps: GetPageStaticProps = async ({ locale }) => {
-  const client = graphqlSharedClient(locale)
+export const getStaticProps: GetPageStaticProps = async (context) => {
+  const client = graphqlSharedClient(context)
   const conf = client.query({ query: StoreConfigDocument })
 
   return {

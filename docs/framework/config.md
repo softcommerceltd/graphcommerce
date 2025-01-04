@@ -109,9 +109,19 @@ GraphQL Magento endpoint.
 Examples:
 - https://magento2.test/graphql
 
+#### magentoVersion: number (required)
+
+Version of the Magento backend.
+
+Values: 245, 246, 247 for Magento 2.4.5, 2.4.6, 2.4.7 respectively.
+
 #### storefront: [GraphCommerceStorefrontConfig](#GraphCommerceStorefrontConfig)[] (required)
 
 All storefront configuration for the project
+
+#### breadcrumbs: boolean = `false`
+
+Configuration for the SidebarGallery component
 
 #### cartDisplayPricesInclTax: boolean
 
@@ -147,6 +157,14 @@ When a user selects a variant, it will switch the values on the configurable pag
 
 Enabling options here will allow switching of those variants.
 
+#### containerSizingContent: BREAKPOINT | FULL_WIDTH = `FULL_WIDTH`
+
+Configures the max width of the content (main content area)
+
+#### containerSizingShell: BREAKPOINT | FULL_WIDTH = `FULL_WIDTH`
+
+Configures the max width of the shell (header, footer, overlays, etc.)
+
 #### crossSellsHideCartItems: boolean = `false`
 
 Determines if cross sell items should be shown when the user already has the product in their cart. This will result in a product will popping off the screen when you add it to the cart.
@@ -159,15 +177,29 @@ Determines if, after adding a cross-sell item to the cart, the user should be re
 
 Default: 'false'
 
-#### customerRequireEmailConfirmation: boolean
+#### customerAddressNoteEnable: boolean
 
-Due to a limitation in the GraphQL API of Magento 2, we need to know if the
-customer requires email confirmation.
+Enables the shipping notes field in the checkout
 
-This value should match Magento 2's configuration value for
-`customer/create_account/confirm` and should be removed once we can query
+#### customerCompanyFieldsEnable: boolean
+
+Enables company fields inside the checkout:
+- Company name
+- VAT ID
+
+#### customerDeleteEnabled: boolean
+
+Enable customer account deletion through the account section
+
+#### customerXMagentoCacheIdDisable: boolean
+
+X-Magento-Cache-Id allows Varnish to cache requests that are made in the browser while users are logged in. For example the products query can now be cached for logged in users.
+
+This can be disabled when Varnish is running out of available memory.
 
 #### dataLayer: [DatalayerConfig](#DatalayerConfig)
+
+Datalayer config
 
 #### debug: [GraphCommerceDebugConfig](#GraphCommerceDebugConfig)
 
@@ -199,6 +231,10 @@ Provide a value to enable Google Analytics for your store.
 
 To override the value for a specific locale, configure in i18n config.
 
+#### googlePlaystore: [GraphCommerceGooglePlaystoreConfig](#GraphCommerceGooglePlaystoreConfig)
+
+To create an assetlinks.json file for the Android app.
+
 #### googleRecaptchaKey: string
 
 Google reCAPTCHA site key.
@@ -219,17 +255,15 @@ This value is required even if you are configuring different values for each loc
 
 Hygraph Management API. **Only used for migrations.**
 
+Optional: If the hygraphEndpoint is configured with the 'High Performance Content
+API', this field is not required.
+
 #### hygraphProjectId: string
 
 Hygraph Project ID. **Only used for migrations.**
 
-#### hygraphWriteAccessEndpoint: string
-
-Content API. **Only used for migrations.**
-
-> Regular read & write endpoint that allows querying and mutating data in your project.
-
-Project settings -> API Access -> Content API
+Optional: If the hygraphEndpoint is configured with the 'High Performance Content
+API', this field is not required.
 
 #### hygraphWriteAccessToken: string
 
@@ -258,7 +292,6 @@ Project settings -> API Access -> Permanent Auth Tokens
   - Can see schema view
 
 ```
-GC_HYGRAPH_WRITE_ACCESS_ENDPOINT="https://...hygraph.com/v2/..."
 GC_HYGRAPH_WRITE_ACCESS_TOKEN="AccessTokenFromHygraph"
 yarn graphcommerce hygraph-migrate
 ```
@@ -268,6 +301,10 @@ yarn graphcommerce hygraph-migrate
 Limit the static generation of SSG when building.
 
 By default GraphCommerce will statically generate all product and category pages during build. This can take quite a long time, to skip this step set this value to true.
+
+#### permissions: [GraphCommercePermissions](#GraphCommercePermissions)
+
+Allows the option to require login or completely disable certain sections of the site, can be overriden per storeview with the storefrontConfig
 
 #### previewSecret: string
 
@@ -282,6 +319,13 @@ SIDEBAR: Will be rendered as a sidebar on desktop and horizontal chips on mobile
 #### productFiltersPro: boolean
 
 Product filters with better UI for mobile and desktop.
+
+#### productListPaginationVariant: COMPACT | EXTENDED = `COMPACT`
+
+Pagination variant for the product listings.
+
+COMPACT means: "< Page X of Y >"
+EXTENDED means: "< 1 2 ... 4 [5] 6 ... 10 11 >"
 
 #### productRoute: string
 
@@ -315,6 +359,10 @@ Show a message when the product is added to the wishlist.
 
 Debug configuration for GraphCommerce
 
+#### cart: boolean
+
+Enable debugging interface to debug sessions
+
 #### pluginStatus: boolean
 
 Reports which plugins are enabled or disabled.
@@ -337,6 +385,38 @@ When updating packages it can happen that the same package is included with diff
 Issues that this can cause are:
 - The same package is included multiple times in the bundle, increasing the bundle size.
 - The Typescript types of the package are not compatible with each other, causing Typescript errors.
+
+### GraphCommerceGooglePlaystoreConfig
+
+See https://developer.android.com/training/app-links/verify-android-applinks#web-assoc
+
+#### packageName: string (required)
+
+The package name of the Android app.
+
+#### sha256CertificateFingerprint: string (required)
+
+The sha256 certificate fingerprint of the Android app.
+
+### GraphCommercePermissions
+
+Permissions input
+
+#### cart: CUSTOMER_ONLY | DISABLED | ENABLED
+
+Changes the availability of the add to cart buttons and the cart page to either customer only or completely disables it.
+
+#### checkout: CUSTOMER_ONLY | DISABLED | ENABLED
+
+Changes the availability of the checkout to either customer only or completely disables it.
+
+#### customerAccount: DISABLED | DISABLE_REGISTRATION | ENABLED
+
+Enables / disabled the account section of the website. DISABLE_REGISTRATION will only disable the registration page.
+
+#### website: ENABLED
+
+Allows the option to require login or completely disable the site.
 
 ### GraphCommerceStorefrontConfig
 
@@ -372,6 +452,12 @@ Examples:
 
 Due to a limitation of the GraphQL API it is not possible to determine if a cart should be displayed including or excluding tax.
 
+#### customerCompanyFieldsEnable: boolean
+
+Enables company fields inside the checkout:
+- Company name
+- VAT ID
+
 #### defaultLocale: boolean
 
 There can only be one entry with defaultLocale set to true.
@@ -403,6 +489,10 @@ Add a gcms-locales header to make sure queries return in a certain language, can
 #### linguiLocale: string
 
 Custom locale used to load the .po files. Must be a valid locale, also used for Intl functions.
+
+#### permissions: [GraphCommercePermissions](#GraphCommercePermissions)
+
+Allows the option to require login or completely disable certain sections of the site on a per store basis
 
 #### robotsAllow: boolean
 

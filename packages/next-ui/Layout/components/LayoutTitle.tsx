@@ -1,6 +1,8 @@
-import { Box, SxProps, Theme, Typography, TypographyProps } from '@mui/material'
+import type { SxProps, Theme, TypographyProps } from '@mui/material'
+import { Box, Typography } from '@mui/material'
 import React from 'react'
-import { IconSvg, IconSvgProps } from '../../IconSvg'
+import type { IconSvgProps } from '../../IconSvg'
+import { IconSvg } from '../../IconSvg'
 import { extendableComponent, responsiveVal } from '../../Styles'
 
 type OwnerState = {
@@ -39,13 +41,9 @@ export const LayoutTitle = React.forwardRef<HTMLDivElement, TitleProps>((props, 
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          gap: `6px`,
-          flexFlow: 'unset',
-          [theme.breakpoints.up('md')]: {
-            flexFlow: 'column',
-          },
+          width: '100%',
+          gap: '6px',
           '&.sizeSmall': {
-            flexFlow: 'unset',
             overflow: 'hidden',
             '& svg': {
               width: responsiveVal(24, 28),

@@ -1,8 +1,9 @@
+import { PrivateQueryMask } from '@graphcommerce/graphql'
 import { Money } from '@graphcommerce/magento-store'
 import { filterNonNullableKeys } from '@graphcommerce/next-ui'
 import { Trans } from '@lingui/react'
-import { Box, SxProps, Theme } from '@mui/material'
-import { ProductPagePriceFragment } from './ProductPagePrice.gql'
+import type { SxProps, Theme } from '@mui/material'
+import type { ProductPagePriceFragment } from './ProductPagePrice.gql'
 
 export type ProductPagePriceTiersProps = {
   sx?: SxProps<Theme>
@@ -21,7 +22,7 @@ export function ProductPagePriceTiers(props: ProductPagePriceTiersProps) {
   if (!priceTiers.length) return null
 
   return (
-    <Box sx={sx}>
+    <PrivateQueryMask sx={sx} variant='rectangular'>
       {priceTiers.map(({ quantity, final_price, discount }) => (
         <div key={quantity}>
           <Trans
@@ -31,6 +32,6 @@ export function ProductPagePriceTiers(props: ProductPagePriceTiersProps) {
           />
         </div>
       ))}
-    </Box>
+    </PrivateQueryMask>
   )
 }

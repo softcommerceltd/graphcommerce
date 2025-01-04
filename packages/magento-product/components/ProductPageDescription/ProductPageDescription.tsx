@@ -1,14 +1,15 @@
+import type { ColumnTwoWithTopProps } from '@graphcommerce/next-ui'
 import {
   ColumnTwoWithTop,
-  ColumnTwoWithTopProps,
-  extendableComponent,
-  breakpointVal,
   LazyHydrate,
+  breakpointVal,
+  extendableComponent,
 } from '@graphcommerce/next-ui'
-import { Box, SxProps, Theme, Typography } from '@mui/material'
-import { Variant } from '@mui/material/styles/createTypography'
+import type { SxProps, Theme } from '@mui/material'
+import { Box, Typography } from '@mui/material'
+import type { Variant } from '@mui/material/styles/createTypography'
 import { ProductPageName } from '../ProductPageName'
-import { ProductPageDescriptionFragment } from './ProductPageDescription.gql'
+import type { ProductPageDescriptionFragment } from './ProductPageDescription.gql'
 
 export type ProductPageDescriptionProps = ProductPageDescriptionFragment &
   Omit<ColumnTwoWithTopProps, 'top' | 'left'> & {
@@ -26,7 +27,7 @@ export function ProductPageDescription(props: ProductPageDescriptionProps) {
   const { product, right, fontSize = 'subtitle1', maxWidth = 'lg', sx = [] } = props
 
   return (
-    <LazyHydrate>
+    <LazyHydrate height={500}>
       <ColumnTwoWithTop
         maxWidth={maxWidth}
         className={classes.root}

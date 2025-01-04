@@ -1,21 +1,18 @@
-import { useWatch } from '@graphcommerce/ecommerce-ui'
+import type { ActionCardItemBase } from '@graphcommerce/ecommerce-ui'
+import { ActionCardListForm, useWatch } from '@graphcommerce/ecommerce-ui'
 import { useQuery } from '@graphcommerce/graphql'
 import { StoreConfigDocument } from '@graphcommerce/magento-store'
-import {
-  ActionCard,
-  ActionCardAccordion,
-  ActionCardItemBase,
-  ActionCardListForm,
-  Button,
-} from '@graphcommerce/next-ui'
+import { ActionCard, ActionCardAccordion, Button } from '@graphcommerce/next-ui'
 import { Trans } from '@lingui/react'
+import type { SxProps, Theme } from '@mui/material'
 import { useMemo } from 'react'
 import { useProductFiltersPro } from './ProductFiltersPro'
 
-export type ProductFiltersProLimitSectionProps = Record<string, unknown>
+export type ProductFiltersProLimitSectionProps = { sx?: SxProps<Theme> }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function ProductFiltersProLimitSection(props: ProductFiltersProLimitSectionProps) {
+  const { sx } = props
   const { form } = useProductFiltersPro()
   const { control } = form
   const activePageSize = useWatch({ control, name: 'pageSize' })
@@ -38,6 +35,7 @@ export function ProductFiltersProLimitSection(props: ProductFiltersProLimitSecti
 
   return (
     <ActionCardAccordion
+      sx={sx}
       defaultExpanded={!!activePageSize}
       summary={<Trans id='Per page' />}
       details={
@@ -48,7 +46,7 @@ export function ProductFiltersProLimitSection(props: ProductFiltersProLimitSecti
           control={control}
           layout='list'
           variant='default'
-          size='medium'
+          size='responsive'
           items={options}
         />
       }

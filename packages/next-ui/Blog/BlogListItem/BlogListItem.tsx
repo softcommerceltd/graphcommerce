@@ -1,8 +1,9 @@
-import { Box, Link, SxProps, Theme, Typography } from '@mui/material'
+import type { SxProps, Theme } from '@mui/material'
+import { Box, Link, Typography } from '@mui/material'
 import React from 'react'
+import { DateFormat } from '../../Intl'
 import { extendableComponent } from '../../Styles'
 import { breakpointVal } from '../../Styles/breakpointVal'
-import { useDateTimeFormat } from '../../hooks'
 
 export type BlogListItemProps = {
   asset: React.ReactNode
@@ -12,14 +13,12 @@ export type BlogListItemProps = {
   sx?: SxProps<Theme>
 }
 
-const name = 'BlogListItem' as const
+const name = 'BlogListItem'
 const parts = ['item', 'date', 'asset', 'title'] as const
 const { classes } = extendableComponent(name, parts)
 
 export function BlogListItem(props: BlogListItemProps) {
   const { asset, url, date, title, sx = [] } = props
-
-  const formatter = useDateTimeFormat({ dateStyle: 'long' })
 
   return (
     <Box
@@ -27,7 +26,7 @@ export function BlogListItem(props: BlogListItemProps) {
       sx={[
         (theme) => ({
           display: 'grid',
-          gridTemplateRows: `auto auto auto`,
+          gridTemplateRows: 'auto auto auto',
           alignContent: 'start',
           color: theme.palette.text.primary,
           gap: theme.spacings.xxs,
@@ -67,7 +66,7 @@ export function BlogListItem(props: BlogListItemProps) {
             color: theme.palette.text.secondary,
           })}
         >
-          {formatter.format(new Date(date))}
+          <DateFormat dateStyle='long' date={date} />
         </Box>
       )}
 

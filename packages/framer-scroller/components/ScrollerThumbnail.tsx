@@ -1,5 +1,6 @@
 import { useMotionValueValue } from '@graphcommerce/framer-utils'
-import { Image, ImageProps } from '@graphcommerce/image'
+import type { ImageProps } from '@graphcommerce/image'
+import { Image } from '@graphcommerce/image'
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { extendableComponent, responsiveVal } from '@graphcommerce/next-ui/Styles'
 import { alpha, styled, useTheme } from '@mui/material'
@@ -13,15 +14,16 @@ type OwnerProps = { active: boolean }
 
 const { withState } = extendableComponent<OwnerProps, typeof name, typeof parts>(name, parts)
 
-type ScrollerThumbnailProps = {
+export type ScrollerThumbnailProps = {
   idx: number
   image: Pick<ImageProps, 'src' | 'height' | 'width'>
+  layoutDependency: boolean
 }
 
 const MotionBox = styled(m.div)({})
 
 export function ScrollerThumbnail(props: ScrollerThumbnailProps) {
-  const { idx, image } = props
+  const { idx, image, layoutDependency } = props
   const { scrollerRef, scroll, getScrollSnapPositions, items } = useScrollerContext()
   const found = useMotionValueValue(items, (v) => v.find((_, index) => index === idx))
   // This ensures that the first item in the scroller is selected by default.
@@ -43,17 +45,24 @@ export function ScrollerThumbnail(props: ScrollerThumbnailProps) {
         theme.palette.primary.main,
         theme.palette.action.hoverOpacity,
       )}`,
-      `inset 0 0 0 2px #ffffff00, 0 0 0 4px #ffffff00`,
+      'inset 0 0 0 2px #ffffff00, 0 0 0 4px #ffffff00',
     ],
   )
 
   const classes = withState({ active })
 
   const scrollIntoView = () =>
-    ref.current?.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'auto' })
+    ref.current?.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'auto' })
+
+  const initialRender = useRef(true)
 
   useEffect(() => {
     if (active && ref.current) {
+      // Skip scrollIntoView on initial render
+      if (initialRender.current) {
+        initialRender.current = false
+        return
+      }
       // This is a hack to ensure that the scroll animation is finished.
       setTimeout(() => scrollIntoView(), 1)
     }
@@ -75,6 +84,7 @@ export function ScrollerThumbnail(props: ScrollerThumbnailProps) {
       }}
       layout='position'
       style={{ boxShadow }}
+      layoutDependency={layoutDependency}
       sx={{
         padding: '2px',
         mx: `calc(${theme.spacing(1)} / 2)`,

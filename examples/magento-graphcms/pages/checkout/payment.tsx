@@ -1,11 +1,13 @@
 import { ComposedForm, WaitForQueries } from '@graphcommerce/ecommerce-ui'
 import { PageOptions } from '@graphcommerce/framer-next-pages'
+import { cacheFirst } from '@graphcommerce/graphql'
 import {
   ApolloCartErrorFullPage,
   CartAgreementsForm,
   CartSummary,
   CartTotals,
   EmptyCart,
+  getCheckoutIsDisabled,
   useCartQuery,
 } from '@graphcommerce/magento-cart'
 import { BillingPageDocument } from '@graphcommerce/magento-cart-checkout'
@@ -58,7 +60,7 @@ function PaymentPage() {
         }
       >
         {billingPage.error && <ApolloCartErrorFullPage error={billingPage.error} />}
-        {!billingPage.error && !cartExists && <EmptyCart />}
+        {!billingPage.error && !cartExists && <EmptyCart disableMargin />}
         {cartExists && !billingPage.error && (
           <>
             <LayoutHeader
@@ -153,12 +155,17 @@ PaymentPage.pageOptions = pageOptions
 
 export default PaymentPage
 
-export const getStaticProps: GetPageStaticProps = async ({ locale }) => {
-  const client = graphqlSharedClient(locale)
-  const staticClient = graphqlSsrClient(locale)
+export const getStaticProps: GetPageStaticProps = async (context) => {
+  if (getCheckoutIsDisabled(context.locale)) return { notFound: true }
+
+  const client = graphqlSharedClient(context)
+  const staticClient = graphqlSsrClient(context)
 
   const conf = client.query({ query: StoreConfigDocument })
-  const layout = staticClient.query({ query: LayoutDocument, fetchPolicy: 'cache-first' })
+  const layout = staticClient.query({
+    query: LayoutDocument,
+    fetchPolicy: cacheFirst(staticClient),
+  })
 
   return {
     props: {

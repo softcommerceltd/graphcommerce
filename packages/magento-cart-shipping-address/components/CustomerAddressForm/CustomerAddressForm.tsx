@@ -1,7 +1,9 @@
+import type { UseFormComposeOptions } from '@graphcommerce/ecommerce-ui'
 import {
+  ActionCardListForm,
   FormAutoSubmit,
   FormPersist,
-  UseFormComposeOptions,
+  TextFieldElement,
   useFormCompose,
 } from '@graphcommerce/ecommerce-ui'
 import { useQuery } from '@graphcommerce/graphql'
@@ -11,22 +13,24 @@ import {
   useFormGqlMutationCart,
 } from '@graphcommerce/magento-cart'
 import { CustomerDocument } from '@graphcommerce/magento-customer'
-import { ActionCardListForm, filterNonNullableKeys } from '@graphcommerce/next-ui'
+import { filterNonNullableKeys, FormRow } from '@graphcommerce/next-ui'
 import { i18n } from '@lingui/core'
-import { Box, SxProps, Theme } from '@mui/material'
-import React, { useMemo } from 'react'
+import { Trans } from '@lingui/macro'
+import type { SxProps, Theme } from '@mui/material'
+import { Box } from '@mui/material'
+import React, { useEffect } from 'react'
 import { findCustomerAddressFromCartAddress } from '../../utils/findCustomerAddressFromCartAddress'
 import { GetAddressesDocument } from '../ShippingAddressForm/GetAddresses.gql'
 import { CustomerAddressActionCard } from './CustomerAddressActionCard'
 import { SetCustomerBillingAddressOnCartDocument } from './SetCustomerBillingAddressOnCart.gql'
 import { SetCustomerShippingAddressOnCartDocument } from './SetCustomerShippingAddressOnCart.gql'
-import {
-  SetCustomerShippingBillingAddressOnCartDocument,
+import type {
   SetCustomerShippingBillingAddressOnCartMutation,
   SetCustomerShippingBillingAddressOnCartMutationVariables,
 } from './SetCustomerShippingBillingAddressOnCart.gql'
+import { SetCustomerShippingBillingAddressOnCartDocument } from './SetCustomerShippingBillingAddressOnCart.gql'
 
-type CustomerAddressListProps = Pick<UseFormComposeOptions, 'step'> & {
+export type CustomerAddressListProps = Pick<UseFormComposeOptions, 'step'> & {
   children?: React.ReactNode
   sx?: SxProps<Theme>
 }
@@ -37,6 +41,7 @@ export function CustomerAddressForm(props: CustomerAddressListProps) {
   const customer = useQuery(CustomerDocument)
   const cartQuery = useCartQuery(GetAddressesDocument)
   const cart = cartQuery.data?.cart
+  const isVirtual = cart?.is_virtual ?? false
 
   const customerAddresses = filterNonNullableKeys(customer.data?.customer?.addresses, ['id'])
 
@@ -80,7 +85,6 @@ export function CustomerAddressForm(props: CustomerAddressListProps) {
       customer_address_id: number | null
     }
   >(Mutation, {
-    experimental_useV2: true,
     defaultValues: { customer_address_id: cartAddressId },
     onBeforeSubmit: (vars) => {
       const { customer_address_id } = vars
@@ -91,10 +95,19 @@ export function CustomerAddressForm(props: CustomerAddressListProps) {
           return {
             ...vars,
             billingAddress: { same_as_shipping: true },
-            shippingAddress: { customer_address_id },
+            shippingAddress: {
+              customer_address_id,
+              customer_notes: vars.shippingAddress?.customer_notes ?? '',
+            },
           }
         case 'shipping':
-          return { ...vars, shippingAddress: { customer_address_id } }
+          return {
+            ...vars,
+            shippingAddress: {
+              customer_address_id,
+              customer_notes: vars.shippingAddress?.customer_notes ?? '',
+            },
+          }
         case 'billing':
         default:
           return { ...vars, billingAddress: { customer_address_id } }
@@ -105,20 +118,26 @@ export function CustomerAddressForm(props: CustomerAddressListProps) {
   const { handleSubmit, error, control, setValue, watch } = form
   const formAddressId = watch('customer_address_id')
 
-  useMemo(() => {
+  useEffect(() => {
     if (mode === 'both' || mode === 'shipping') {
-      if (!cartAddressId && defaultShippingId) {
-        // console.log('shippingAddress.customer_address_id', defaultShippingId)
+      if (!cartAddressId && !cartShipping && defaultShippingId) {
         setValue('customer_address_id', defaultShippingId, { shouldValidate: true })
       }
     }
     if (mode === 'billing') {
-      if (!cartAddressId && defaultBillingId) {
-        // console.log('billingAddress.customer_address_id', defaultBillingId)
+      if (!cartAddressId && !cartBilling && defaultBillingId) {
         setValue('customer_address_id', defaultBillingId, { shouldValidate: true })
       }
     }
-  }, [cartAddressId, defaultBillingId, defaultShippingId, mode, setValue])
+  }, [
+    cartAddressId,
+    cartBilling,
+    cartShipping,
+    defaultBillingId,
+    defaultShippingId,
+    mode,
+    setValue,
+  ])
 
   const submit = handleSubmit(() => {})
 
@@ -129,7 +148,6 @@ export function CustomerAddressForm(props: CustomerAddressListProps) {
 
   return (
     <>
-      <FormPersist form={form} name='CustomerAddressForm' />
       <FormAutoSubmit control={form.control} submit={submit} wait={0} />
       <Box component='form' onSubmit={submit} noValidate sx={sx}>
         <ActionCardListForm
@@ -139,15 +157,31 @@ export function CustomerAddressForm(props: CustomerAddressListProps) {
           collapse
           size='large'
           color='secondary'
+          required
           items={[
             ...customerAddresses.map((address) => ({ ...address, value: address.id })),
             { value: -1 },
           ]}
           render={CustomerAddressActionCard}
         />
+        {!isVirtual &&
+          formAddressId !== -1 &&
+          import.meta.graphCommerce.customerAddressNoteEnable && (
+            <FormRow>
+              <TextFieldElement
+                control={form.control}
+                name='shippingAddress.customer_notes'
+                label={<Trans>Shipping Note</Trans>}
+                multiline
+                minRows={3}
+              />
+            </FormRow>
+          )}
         <ApolloCartErrorAlert error={error} />
       </Box>
       {formAddressId === -1 && children}
+
+      <FormPersist form={form} name='CustomerAddressForm' />
     </>
   )
 }

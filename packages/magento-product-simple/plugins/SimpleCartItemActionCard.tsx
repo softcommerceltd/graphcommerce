@@ -1,15 +1,14 @@
-import {
-  SelectedCustomizableOptions,
-  type CartItemActionCard,
-  CartItemActionCardProps,
-} from '@graphcommerce/magento-cart-items'
-import type { PluginProps } from '@graphcommerce/next-config'
+import type { CartItemActionCardProps } from '@graphcommerce/magento-cart-items'
+import { SelectedCustomizableOptions } from '@graphcommerce/magento-cart-items'
+import type { PluginConfig, PluginProps } from '@graphcommerce/next-config'
 import { isTypename } from '@graphcommerce/next-ui'
 
-export const component = 'CartItemActionCard'
-export const exported = '@graphcommerce/magento-cart-items'
+export const config: PluginConfig = {
+  type: 'component',
+  module: '@graphcommerce/magento-cart-items',
+}
 
-export function SimpleCartItemActionCard(props: PluginProps<CartItemActionCardProps>) {
+export function CartItemActionCard(props: PluginProps<CartItemActionCardProps>) {
   const { Prev, ...rest } = props
 
   if (!isTypename(rest.cartItem, ['SimpleCartItem'])) return <Prev {...rest} />
@@ -26,5 +25,3 @@ export function SimpleCartItemActionCard(props: PluginProps<CartItemActionCardPr
     />
   )
 }
-
-export const Plugin = SimpleCartItemActionCard

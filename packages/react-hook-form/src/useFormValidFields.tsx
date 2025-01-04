@@ -1,5 +1,5 @@
-import { FieldValues, Path, UseFormReturn } from 'react-hook-form'
-import { IsRequired } from './useGqlDocumentHandler'
+import type { FieldValues, Path, UseFormReturn } from 'react-hook-form'
+import type { IsRequired } from './useGqlDocumentHandler'
 
 export type UseFormValidReturn<TFieldValues> = Partial<Record<Path<TFieldValues>, boolean>>
 
@@ -9,6 +9,7 @@ export type UseFormValidReturn<TFieldValues> = Partial<Record<Path<TFieldValues>
  * Record field names as key and boolean as value indicating whether the field is valid
  *
  * @deprecated Please use TextInputElement, SelectElement, etc. with the showValid prop
+ * @public
  */
 export function useFormValidFields<TFieldValues extends FieldValues>(
   form: Pick<UseFormReturn<TFieldValues>, 'watch' | 'formState'>,

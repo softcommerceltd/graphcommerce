@@ -38,7 +38,7 @@ const Grid = styled('div')(({ theme }) => ({
   display: 'grid',
   gridAutoFlow: 'columns',
   [theme.breakpoints.up('md')]: {
-    gridTemplateColumns: `repeat(3, minmax(180px, 1fr))`,
+    gridTemplateColumns: 'repeat(3, minmax(180px, 1fr))',
   },
   gap: responsiveVal(20, 40),
 }))
@@ -130,8 +130,8 @@ ButtonsPage.pageOptions = pageOptions
 
 type GetPageStaticProps = GetStaticProps<LayoutMinimalProps>
 
-export const getStaticProps: GetPageStaticProps = async ({ locale }) => {
-  const client = graphqlSharedClient(locale)
+export const getStaticProps: GetPageStaticProps = async (context) => {
+  const client = graphqlSharedClient(context)
   const conf = client.query({ query: StoreConfigDocument })
 
   return {

@@ -1,10 +1,7 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.withGraphCommerce = void 0;
-const circular_dependency_plugin_1 = __importDefault(require("circular-dependency-plugin"));
+exports.withGraphCommerce = withGraphCommerce;
+// import CircularDependencyPlugin from 'circular-dependency-plugin'
 const plugin_1 = require("inspectpack/plugin");
 const webpack_1 = require("webpack");
 const loadConfig_1 = require("./config/loadConfig");
@@ -34,7 +31,7 @@ function domains(config) {
  * module.exports = withGraphCommerce(nextConfig)
  * ```
  */
-function withGraphCommerce(nextConfig, cwd) {
+function withGraphCommerce(nextConfig, cwd = process.cwd()) {
     graphcommerceConfig ??= (0, loadConfig_1.loadConfig)(cwd);
     const importMetaPaths = (0, configToImportMeta_1.configToImportMeta)(graphcommerceConfig);
     const { storefront } = graphcommerceConfig;
@@ -44,10 +41,10 @@ function withGraphCommerce(nextConfig, cwd) {
     ];
     return {
         ...nextConfig,
+        bundlePagesRouterDependencies: true,
         experimental: {
             ...nextConfig.experimental,
             scrollRestoration: true,
-            bundlePagesExternals: true,
             swcPlugins: [...(nextConfig.experimental?.swcPlugins ?? []), ['@lingui/swc-plugin', {}]],
         },
         i18n: {
@@ -60,7 +57,8 @@ function withGraphCommerce(nextConfig, cwd) {
             ...nextConfig.images,
             remotePatterns: [
                 { hostname: new URL(graphcommerceConfig.magentoEndpoint).hostname },
-                { hostname: 'media.graphassets.com' },
+                { hostname: '**.graphassets.com' },
+                { hostname: '*.graphcommerce.org' },
                 ...(nextConfig.images?.remotePatterns ?? []),
             ],
         },
@@ -94,8 +92,19 @@ function withGraphCommerce(nextConfig, cwd) {
         },
         transpilePackages,
         webpack: (config, options) => {
-            // Allow importing yml/yaml files for graphql-mesh
-            config.module?.rules?.push({ test: /\.ya?ml$/, use: 'js-yaml-loader' });
+            if (!config.module)
+                config.module = { rules: [] };
+            config.module = {
+                ...config.module,
+                rules: [
+                    ...(config.module.rules ?? []),
+                    // Allow importing yml/yaml files for graphql-mesh
+                    { test: /\.ya?ml$/, use: 'js-yaml-loader' },
+                    // @lingui .po file support
+                    { test: /\.po/, use: '@lingui/loader' },
+                ],
+                exprContextCritical: false,
+            };
             if (!config.plugins)
                 config.plugins = [];
             // Make import.meta.graphCommerce available for usage.
@@ -103,11 +112,13 @@ function withGraphCommerce(nextConfig, cwd) {
             // To properly properly treeshake @apollo/client we need to define the __DEV__ property
             config.plugins.push(new webpack_1.DefinePlugin({ 'globalThis.__DEV__': options.dev }));
             if (!options.isServer) {
-                if (graphcommerceConfig.debug?.webpackCircularDependencyPlugin) {
-                    config.plugins.push(new circular_dependency_plugin_1.default({
-                        exclude: /readable-stream|duplexer2|node_modules\/next/,
-                    }));
-                }
+                // if (graphcommerceConfig.debug?.webpackCircularDependencyPlugin) {
+                //   config.plugins.push(
+                //     new CircularDependencyPlugin({
+                //       exclude: /readable-stream|duplexer2|node_modules\/next/,
+                //     }),
+                //   )
+                // }
                 if (graphcommerceConfig.debug?.webpackDuplicatesPlugin) {
                     config.plugins.push(new plugin_1.DuplicatesPlugin({
                         ignoredPackages: [
@@ -122,8 +133,6 @@ function withGraphCommerce(nextConfig, cwd) {
                     }));
                 }
             }
-            // @lingui .po file support
-            config.module?.rules?.push({ test: /\.po/, use: '@lingui/loader' });
             config.snapshot = {
                 ...(config.snapshot ?? {}),
                 managedPaths: [
@@ -151,4 +160,3 @@ function withGraphCommerce(nextConfig, cwd) {
         },
     };
 }
-exports.withGraphCommerce = withGraphCommerce;

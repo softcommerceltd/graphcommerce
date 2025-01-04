@@ -1,4 +1,6 @@
 import { PageOptions } from '@graphcommerce/framer-next-pages'
+import { cacheFirst } from '@graphcommerce/graphql'
+import { useCustomerAccountCanSignIn } from '@graphcommerce/magento-customer'
 import { SearchLink } from '@graphcommerce/magento-search'
 import { PageMeta, StoreConfigDocument } from '@graphcommerce/magento-store'
 import { GetStaticProps, Separator, icon404, IconSvg } from '@graphcommerce/next-ui'
@@ -13,14 +15,21 @@ type Props = Record<string, unknown>
 type GetPageStaticProps = GetStaticProps<LayoutNavigationProps, Props>
 
 function RouteNotFoundPage() {
+  const canSignIn = useCustomerAccountCanSignIn()
+
   const links = [
     <Link key={0} href='/' color='primary' underline='hover'>
       <Trans id='Store home' />
     </Link>,
-    <Link key={1} href='/account' color='primary' underline='hover'>
-      <Trans id='Account' />
-    </Link>,
   ]
+
+  if (canSignIn) {
+    links.push(
+      <Link key={1} href='/account' color='primary' underline='hover'>
+        <Trans id='Account' />
+      </Link>,
+    )
+  }
 
   return (
     <>
@@ -61,11 +70,14 @@ RouteNotFoundPage.pageOptions = {
 
 export default RouteNotFoundPage
 
-export const getStaticProps: GetPageStaticProps = async ({ locale }) => {
-  const client = graphqlSharedClient(locale)
-  const staticClient = graphqlSsrClient(locale)
+export const getStaticProps: GetPageStaticProps = async (context) => {
+  const client = graphqlSharedClient(context)
+  const staticClient = graphqlSsrClient(context)
   const conf = client.query({ query: StoreConfigDocument })
-  const layout = staticClient.query({ query: LayoutDocument, fetchPolicy: 'cache-first' })
+  const layout = staticClient.query({
+    query: LayoutDocument,
+    fetchPolicy: cacheFirst(staticClient),
+  })
 
   return {
     props: {

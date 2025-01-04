@@ -4,7 +4,8 @@ exports.demoConfig = void 0;
 exports.demoConfig = {
     canonicalBaseUrl: 'https://graphcommerce.vercel.app',
     hygraphEndpoint: 'https://eu-central-1.cdn.hygraph.com/content/ckhx7xadya6xs01yxdujt8i80/master',
-    magentoEndpoint: 'https://backend.reachdigital.dev/graphql',
+    magentoEndpoint: 'https://configurator.reachdigital.dev/graphql',
+    magentoVersion: 247,
     storefront: [
         { locale: 'en', magentoStoreCode: 'en_US', defaultLocale: true },
         {
@@ -35,6 +36,7 @@ exports.demoConfig = {
     ],
     productFiltersPro: true,
     productFiltersLayout: 'DEFAULT',
+    productListPaginationVariant: 'COMPACT',
     compareVariant: 'ICON',
     robotsAllow: false,
     demoMode: true,
@@ -44,4 +46,7 @@ exports.demoConfig = {
     configurableVariantForSimple: true,
     configurableVariantValues: { url: true, content: true, gallery: true },
     recentlyViewedProducts: { enabled: true, maxCount: 20 },
+    breadcrumbs: false,
+    customerDeleteEnabled: true,
+    previewSecret: 'SECRET',
 };

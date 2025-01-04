@@ -1,4 +1,4 @@
-import { getHygraphStaticPaths } from '@graphcommerce/graphcms-ui'
+import { getHygraphStaticPaths } from '@graphcommerce/hygraph-ui'
 import { getCategoryStaticPaths } from '@graphcommerce/magento-category/queries/getCategoryStaticPaths'
 import {
   excludeSitemap,
@@ -11,7 +11,6 @@ import { graphqlSsrClient } from '../../lib/graphql/graphqlSsrClient'
 
 const excludes = [
   '*page/home',
-  '*/p/*',
   '*/product/global',
   '*/product*',
   '*/account*',
@@ -31,7 +30,7 @@ const excludes = [
   '*/cart',
   '*/checkout',
 ]
-const additionalPaths = ['']
+const additionalPaths: string[] = []
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   const { locale } = context
@@ -39,10 +38,10 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
 
   // Filter out category pages as they are already added in sitemap/categories.xml
   const excludeCategories = (
-    await getCategoryStaticPaths(graphqlSsrClient(locale), locale, { limit: false })
+    await getCategoryStaticPaths(graphqlSsrClient(context), locale, { limit: false })
   ).map(staticPathsToString)
 
-  const hygraphPaths = await getHygraphStaticPaths(graphqlSsrClient(locale), locale, {
+  const hygraphPaths = await getHygraphStaticPaths(graphqlSsrClient(context), locale, {
     filter: { metaRobots_not: 'NOINDEX_NOFOLLOW' },
   })
 

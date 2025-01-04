@@ -1,22 +1,23 @@
 import {
-  SectionContainer,
-  iconInvoice,
+  DateTimeFormat,
   IconSvg,
-  extendableComponent,
-  useDateTimeFormat,
+  SectionContainer,
   breakpointVal,
+  extendableComponent,
+  iconInvoice,
 } from '@graphcommerce/next-ui'
-import { Trans } from '@lingui/react'
-import { Box, SxProps, Theme, Typography, lighten } from '@mui/material'
+import { Trans } from '@lingui/macro'
+import type { SxProps, Theme } from '@mui/material'
+import { Box, Typography, lighten } from '@mui/material'
 import { AddressMultiLine } from '../AddressMultiLine/AddressMultiLine'
 import { TrackingLink } from '../TrackingLink/TrackingLink'
-import { OrderDetailsFragment } from './OrderDetails.gql'
+import type { OrderDetailsFragment } from './OrderDetails.gql'
 
 export type OrderDetailsProps = Partial<OrderDetailsFragment> & {
   sx?: SxProps<Theme>
 }
 
-const componentName = 'OrderDetails' as const
+const componentName = 'OrderDetails'
 const parts = [
   'sectionContainer',
   'orderDetailTitle',
@@ -39,11 +40,9 @@ export function OrderDetails(props: OrderDetailsProps) {
     sx = [],
   } = props
 
-  const dateFormatter = useDateTimeFormat({ year: 'numeric', month: 'long', day: 'numeric' })
-
   return (
     <SectionContainer
-      labelLeft={<Trans id='Order details' />}
+      labelLeft={<Trans>Order details</Trans>}
       sx={[
         (theme) => ({
           padding: theme.spacings.sm,
@@ -72,9 +71,9 @@ export function OrderDetails(props: OrderDetailsProps) {
           (theme) => ({
             gridColumnGap: theme.spacings.xxl,
             gridRowGap: theme.spacings.md,
-            display: `grid`,
+            display: 'grid',
             [theme.breakpoints.up('sm')]: {
-              gridTemplateColumns: `1fr 1fr`,
+              gridTemplateColumns: '1fr 1fr',
               marginTop: theme.spacings.xxs,
             },
           }),
@@ -84,7 +83,7 @@ export function OrderDetails(props: OrderDetailsProps) {
         <Box className={classes.orderDetailRow}>
           <SectionContainer
             variantLeft='h5'
-            labelLeft={<Trans id='Order number' />}
+            labelLeft={<Trans>Order number</Trans>}
             className={classes.orderDetailTitle}
             sx={{ '& .SectionHeader-root': { marginTop: 0, paddingBottom: '4px' } }}
           >
@@ -95,18 +94,18 @@ export function OrderDetails(props: OrderDetailsProps) {
         <Box className={classes.orderDetailRow}>
           <SectionContainer
             variantLeft='h5'
-            labelLeft={<Trans id='Order date' />}
+            labelLeft={<Trans>Order date</Trans>}
             className={classes.orderDetailTitle}
             sx={{ '& .SectionHeader-root': { marginTop: 0, paddingBottom: '4px' } }}
           >
-            <Typography>{order_date && dateFormatter.format(new Date(order_date))}</Typography>
+            <DateTimeFormat date={order_date} />
           </SectionContainer>
         </Box>
 
         <Box className={classes.orderDetailRow}>
           <SectionContainer
             variantLeft='h5'
-            labelLeft={<Trans id='Shipping method' />}
+            labelLeft={<Trans>Shipping method</Trans>}
             className={classes.orderDetailTitle}
             sx={{ '& .SectionHeader-root': { marginTop: 0, paddingBottom: '4px' } }}
           >
@@ -126,13 +125,13 @@ export function OrderDetails(props: OrderDetailsProps) {
         <Box className={classes.orderDetailRow}>
           <SectionContainer
             variantLeft='h5'
-            labelLeft={<Trans id='Payment method' />}
+            labelLeft={<Trans>Payment method</Trans>}
             className={classes.orderDetailTitle}
             sx={{ '& .SectionHeader-root': { marginTop: 0, paddingBottom: '4px' } }}
           >
             {payment_methods && payment_methods.length < 1 && (
               <Typography>
-                <Trans id='No payment information' />
+                <Trans>No payment information</Trans>
               </Typography>
             )}
 
@@ -160,7 +159,7 @@ export function OrderDetails(props: OrderDetailsProps) {
         <Box className={classes.orderDetailRow}>
           <SectionContainer
             variantLeft='h5'
-            labelLeft={<Trans id='Shipping address' />}
+            labelLeft={<Trans>Shipping address</Trans>}
             className={classes.orderDetailTitle}
             sx={{ '& .SectionHeader-root': { marginTop: 0, paddingBottom: '4px' } }}
           >
@@ -171,7 +170,7 @@ export function OrderDetails(props: OrderDetailsProps) {
         <Box className={classes.orderDetailRow}>
           <SectionContainer
             variantLeft='h5'
-            labelLeft={<Trans id='Billing address' />}
+            labelLeft={<Trans>Billing address</Trans>}
             className={classes.orderDetailTitle}
             sx={{ '& .SectionHeader-root': { marginTop: 0, paddingBottom: '4px' } }}
           >

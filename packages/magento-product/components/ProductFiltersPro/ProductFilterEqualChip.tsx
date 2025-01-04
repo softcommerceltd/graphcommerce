@@ -1,18 +1,17 @@
-import { useWatch } from '@graphcommerce/ecommerce-ui'
+import { ActionCardListForm, useWatch } from '@graphcommerce/ecommerce-ui'
 import type { ProductAttributeFilterInput } from '@graphcommerce/graphql-mesh'
 import {
-  ChipOverlayOrPopper,
-  ActionCardListForm,
   ActionCard,
-  filterNonNullableKeys,
+  ChipOverlayOrPopper,
   IconSvg,
+  filterNonNullableKeys,
   iconCirle,
 } from '@graphcommerce/next-ui'
 import { Box } from '@mui/material'
 import { useMemo } from 'react'
 import { isFilterTypeEqual } from '../ProductListItems/filterTypes'
 import { useProductFiltersPro } from './ProductFiltersPro'
-import { FilterProps } from './ProductFiltersProAggregations'
+import type { FilterProps } from './ProductFiltersProAggregations'
 
 export function ProductFilterEqualChip(props: FilterProps) {
   const { aggregation } = props

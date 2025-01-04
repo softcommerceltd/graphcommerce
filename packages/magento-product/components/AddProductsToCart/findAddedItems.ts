@@ -1,6 +1,6 @@
 import { filterNonNullableKeys, isTypename } from '@graphcommerce/next-ui'
-import { AddProductsToCartMutation } from './AddProductsToCart.gql'
-import { AddProductsToCartFields } from './useFormAddProductsToCart'
+import type { AddProductsToCartMutation } from './AddProductsToCart.gql'
+import type { AddProductsToCartFields } from './useFormAddProductsToCart'
 
 export function findAddedItems(
   data: AddProductsToCartMutation | null | undefined,
@@ -47,10 +47,7 @@ export function findAddedItems(
         }
       }
 
-      const customizable_options = isTypename(cartItem, ['ConfigurableCartItem'])
-        ? cartItem.configurable_customizable
-        : cartItem.customizable_options
-
+      const { customizable_options } = cartItem
       const matchEntered = filterNonNullableKeys(itemVariable.entered_options).every(
         (requestOption) =>
           customizable_options.find(

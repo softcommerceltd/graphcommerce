@@ -1,14 +1,22 @@
 import { globalApolloClient } from '@graphcommerce/graphql'
+import type { ApolloCache } from '@graphcommerce/graphql/apollo'
 import { ApolloLink, fromPromise, onError, setContext } from '@graphcommerce/graphql/apollo'
-import { ErrorCategory } from '@graphcommerce/magento-graphql'
-import type { GraphQLError } from 'graphql'
-import { NextRouter } from 'next/router'
+import type { ErrorCategory } from '@graphcommerce/magento-graphql'
+import type { GraphQLFormattedError } from 'graphql'
+import type { NextRouter } from 'next/router'
 import { signOut } from '../components/SignOutForm/signOut'
 import { CustomerTokenDocument } from '../hooks'
 
-export type PushRouter = Pick<NextRouter, 'push' | 'events'>
+export type PushRouter = Pick<NextRouter, 'push' | 'events' | 'locale'>
 
-async function pushWithPromise(router: Pick<NextRouter, 'push' | 'events'>, url: string) {
+declare module '@apollo/client' {
+  interface DefaultContext {
+    cache?: ApolloCache<unknown>
+    headers?: Record<string, string>
+  }
+}
+
+export async function pushWithPromise(router: Pick<NextRouter, 'push' | 'events'>, url: string) {
   try {
     await router.push(url)
   } catch {
@@ -37,7 +45,7 @@ async function pushWithPromise(router: Pick<NextRouter, 'push' | 'events'>, url:
   })
 }
 
-function isErrorCategory(err: GraphQLError, category: ErrorCategory) {
+function isErrorCategory(err: GraphQLFormattedError, category: ErrorCategory) {
   return err.extensions?.category === category
 }
 
@@ -45,7 +53,7 @@ const addTokenHeader = setContext((_, context) => {
   if (!context.headers) context.headers = {}
 
   try {
-    const query = context.cache.readQuery({ query: CustomerTokenDocument })
+    const query = context.cache?.readQuery({ query: CustomerTokenDocument })
 
     if (query?.customerToken?.token) {
       context.headers.authorization = `Bearer ${query?.customerToken?.token}`
@@ -69,7 +77,7 @@ const customerErrorLink = (router: PushRouter) =>
     /** If the error we're dealing with is not an authorization error, we're done. */
     if (!authError) return undefined
 
-    if (!oldHeaders.authorization) {
+    if (!oldHeaders?.authorization) {
       // console.error(
       //   'No authorization header found in request, but an authorization error was returned, this is a bug. This is the operation:',
       //   operation,

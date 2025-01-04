@@ -1,9 +1,7 @@
 "use strict";
+/* eslint-disable @typescript-eslint/no-explicit-any */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.extractExports = exports.RUNTIME_VALUE = exports.UnsupportedValueError = exports.NoSuchDeclarationError = void 0;
-class NoSuchDeclarationError extends Error {
-}
-exports.NoSuchDeclarationError = NoSuchDeclarationError;
+exports.extractExports = extractExports;
 function isIdentifier(node) {
     return node.type === 'Identifier';
 }
@@ -34,34 +32,7 @@ function isRegExpLiteral(node) {
 function isTemplateLiteral(node) {
     return node.type === 'TemplateLiteral';
 }
-class UnsupportedValueError extends Error {
-    /** @example `config.runtime[0].value` */
-    path;
-    constructor(message, paths) {
-        super(message);
-        // Generating "path" that looks like "config.runtime[0].value"
-        let codePath;
-        if (Array.isArray(paths)) {
-            codePath = '';
-            for (const path of paths) {
-                if (path[0] === '[') {
-                    // "array" + "[0]"
-                    codePath += path;
-                }
-                else if (codePath === '') {
-                    codePath = path;
-                }
-                else {
-                    // "object" + ".key"
-                    codePath += `.${path}`;
-                }
-            }
-        }
-        this.path = codePath;
-    }
-}
-exports.UnsupportedValueError = UnsupportedValueError;
-exports.RUNTIME_VALUE = Symbol('RUNTIME_VALUE');
+const RUNTIME_VALUE = Symbol('RUNTIME_VALUE');
 function extractValue(node, path, optional = false) {
     if (isNullLiteral(node)) {
         return null;
@@ -87,9 +58,7 @@ function extractValue(node, path, optional = false) {
             case 'undefined':
                 return undefined;
             default:
-                if (optional)
-                    return exports.RUNTIME_VALUE;
-                throw new UnsupportedValueError(`Unknown identifier "${node.value}"`, path);
+                return RUNTIME_VALUE;
         }
     }
     else if (isArrayExpression(node)) {
@@ -100,9 +69,7 @@ function extractValue(node, path, optional = false) {
             if (elem) {
                 if (elem.spread) {
                     // e.g. [ ...a ]
-                    if (optional)
-                        return exports.RUNTIME_VALUE;
-                    throw new UnsupportedValueError('Unsupported spread operator in the Array Expression', path);
+                    return RUNTIME_VALUE;
                 }
                 arr.push(extractValue(elem.expression, path && [...path, `[${i}]`], optional));
             }
@@ -120,9 +87,7 @@ function extractValue(node, path, optional = false) {
         for (const prop of node.properties) {
             if (!isKeyValueProperty(prop)) {
                 // e.g. { ...a }
-                if (optional)
-                    return exports.RUNTIME_VALUE;
-                throw new UnsupportedValueError('Unsupported spread operator in the Object Expression', path);
+                return RUNTIME_VALUE;
             }
             let key;
             if (isIdentifier(prop.key)) {
@@ -134,9 +99,7 @@ function extractValue(node, path, optional = false) {
                 key = prop.key.value;
             }
             else {
-                if (optional)
-                    return exports.RUNTIME_VALUE;
-                throw new UnsupportedValueError(`Unsupported key type "${prop.key.type}" in the Object Expression`, path);
+                return RUNTIME_VALUE;
             }
             obj[key] = extractValue(prop.value, path && [...path, key]);
         }
@@ -146,9 +109,7 @@ function extractValue(node, path, optional = false) {
         // e.g. `abc`
         if (node.expressions.length !== 0) {
             // TODO: should we add support for `${'e'}d${'g'}'e'`?
-            if (optional)
-                return exports.RUNTIME_VALUE;
-            throw new UnsupportedValueError('Unsupported template literal with expressions', path);
+            return RUNTIME_VALUE;
         }
         // When TemplateLiteral has 0 expressions, the length of quasis is always 1.
         // Because when parsing TemplateLiteral, the parser yields the first quasi,
@@ -163,9 +124,7 @@ function extractValue(node, path, optional = false) {
         return cooked ?? raw;
     }
     else {
-        if (optional)
-            return exports.RUNTIME_VALUE;
-        throw new UnsupportedValueError(`Unsupported node type "${node.type}"`, path);
+        return RUNTIME_VALUE;
     }
 }
 function extractExports(module) {
@@ -183,7 +142,7 @@ function extractExports(module) {
                 switch (moduleItem.declaration.type) {
                     case 'ClassDeclaration':
                     case 'FunctionDeclaration':
-                        exports[moduleItem.declaration.identifier.value] = exports.RUNTIME_VALUE;
+                        exports[moduleItem.declaration.identifier.value] = RUNTIME_VALUE;
                         // node.identifier.value
                         break;
                     case 'VariableDeclaration':
@@ -198,4 +157,3 @@ function extractExports(module) {
     }
     return [exports, errors];
 }
-exports.extractExports = extractExports;

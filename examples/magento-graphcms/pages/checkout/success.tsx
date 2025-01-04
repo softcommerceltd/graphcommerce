@@ -1,5 +1,11 @@
 import { PageOptions } from '@graphcommerce/framer-next-pages'
-import { CartItemSummary, CartSummary, InlineAccount } from '@graphcommerce/magento-cart'
+import { cacheFirst } from '@graphcommerce/graphql'
+import {
+  CartItemSummary,
+  CartSummary,
+  InlineAccount,
+  getCheckoutIsDisabled,
+} from '@graphcommerce/magento-cart'
 import { SignupNewsletter } from '@graphcommerce/magento-newsletter'
 import { PageMeta, StoreConfigDocument } from '@graphcommerce/magento-store'
 import {
@@ -34,7 +40,7 @@ function OrderSuccessPage() {
   return (
     <>
       <PageMeta title={i18n._(/* i18n */ 'Checkout summary')} metaRobots={['noindex']} />
-      <LayoutHeader floatingMd>
+      <LayoutHeader floatingMd disableBackNavigation>
         {hasCartId && (
           <LayoutTitle size='small' icon={iconParty}>
             <Trans id='Thank you for your order!' />
@@ -57,7 +63,7 @@ function OrderSuccessPage() {
         )}
         {hasCartId && (
           <>
-            <LayoutTitle icon={iconParty}>
+            <LayoutTitle icon={iconParty} sx={{ flexDirection: { md: 'column' } }}>
               <Box sx={{ display: 'grid', columns: 1, justifyItems: 'center' }}>
                 <Trans id='Thank you for your order!' />
                 {orderNumber && <Typography variant='subtitle1'>#{orderNumber}</Typography>}
@@ -68,7 +74,7 @@ function OrderSuccessPage() {
 
             <SignupNewsletter />
 
-            <InlineAccount accountHref='/account' />
+            <InlineAccount />
 
             <Box textAlign='center' m={8}>
               <Button href='/' color='primary' variant='pill' size='large' id='back-to-home'>
@@ -89,11 +95,16 @@ OrderSuccessPage.pageOptions = pageOptions
 
 export default OrderSuccessPage
 
-export const getStaticProps: GetPageStaticProps = async ({ locale }) => {
-  const client = graphqlSharedClient(locale)
-  const staticClient = graphqlSsrClient(locale)
+export const getStaticProps: GetPageStaticProps = async (context) => {
+  if (getCheckoutIsDisabled(context.locale)) return { notFound: true }
+
+  const client = graphqlSharedClient(context)
+  const staticClient = graphqlSsrClient(context)
   const conf = client.query({ query: StoreConfigDocument })
-  const layout = staticClient.query({ query: LayoutDocument, fetchPolicy: 'cache-first' })
+  const layout = staticClient.query({
+    query: LayoutDocument,
+    fetchPolicy: cacheFirst(staticClient),
+  })
 
   return {
     props: {

@@ -1,19 +1,20 @@
 import { useQuery } from '@graphcommerce/graphql'
 import { StoreConfigDocument } from '@graphcommerce/magento-store'
-import { useNumberFormat } from '@graphcommerce/next-ui'
-import { ProductWeightFragment } from './ProductWeight.gql'
+import type { UnitFormatProps } from '@graphcommerce/next-ui'
+import { UnitFormat } from '@graphcommerce/next-ui'
+import type { ProductWeightFragment } from './ProductWeight.gql'
 
-export function ProductWeight(props: ProductWeightFragment) {
-  const { weight } = props
+export type ProductWeightProps = Omit<UnitFormatProps, 'unit'> & { product: ProductWeightFragment }
+
+/** @public */
+export function ProductWeight(props: ProductWeightProps) {
+  const { product, ...rest } = props
+
   const { data: conf } = useQuery(StoreConfigDocument)
-  const unit = conf?.storeConfig?.weight_unit ?? ''
 
-  const numberFormatter = useNumberFormat()
+  if (!product.weight) return null
 
-  if (!numberFormatter || !weight) return null
-  return (
-    <>
-      {numberFormatter.format(weight)} {unit}
-    </>
-  )
+  const unit = conf?.storeConfig?.weight_unit === 'lbs' ? 'pound' : 'kilogram'
+
+  return <UnitFormat unit={unit} {...rest} value={product.weight} />
 }

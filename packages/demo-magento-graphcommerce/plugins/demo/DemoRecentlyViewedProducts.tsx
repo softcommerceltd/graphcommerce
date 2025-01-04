@@ -1,31 +1,37 @@
-import { AddProductsToCartForm, ProductListItemType } from '@graphcommerce/magento-product'
+import type { ProductListItemType } from '@graphcommerce/magento-product'
+import { AddProductsToCartForm } from '@graphcommerce/magento-product'
 import {
+  type RecentlyViewedProductsProps,
   useRecentlyViewedProducts,
   useRecentlyViewedSkus,
-  type RecentlyViewedProductsProps,
 } from '@graphcommerce/magento-recently-viewed-products'
-import type { IfConfig, PluginProps } from '@graphcommerce/next-config'
+import type { PluginConfig, PluginProps } from '@graphcommerce/next-config'
 import {
+  RenderType,
   SidebarSlider,
   filterNonNullableKeys,
-  RenderType,
   responsiveVal,
 } from '@graphcommerce/next-ui'
 import { Box, Typography } from '@mui/material'
 import { useInView } from 'framer-motion'
 import { useRef } from 'react'
 
-export const component = 'RecentlyViewedProducts'
-export const exported = '@graphcommerce/magento-recently-viewed-products'
-export const ifConfig: IfConfig = 'demoMode'
+export const config: PluginConfig = {
+  type: 'component',
+  module: '@graphcommerce/magento-recently-viewed-products',
+  ifConfig: 'demoMode',
+}
 
-function DemoRecentlyViewedProducts(props: PluginProps<RecentlyViewedProductsProps>) {
-  const { Prev, exclude, title, productListRenderer, loading = 'lazy', ...scrollerProps } = props
+export function RecentlyViewedProducts(props: PluginProps<RecentlyViewedProductsProps>) {
+  const { exclude, title, productListRenderer, loading = 'lazy' } = props
 
   const ref = useRef<HTMLDivElement>(null)
   const isInView = useInView(ref, { margin: '300px' })
   const { skus } = useRecentlyViewedSkus({ exclude })
-  const productList = useRecentlyViewedProducts({ exclude, skip: !isInView && loading === 'lazy' })
+  const productList = useRecentlyViewedProducts({
+    exclude,
+    skip: skus.length === 0 || (!isInView && loading === 'lazy'),
+  })
 
   if (
     !import.meta.graphCommerce.recentlyViewedProducts?.enabled ||
@@ -62,4 +68,3 @@ function DemoRecentlyViewedProducts(props: PluginProps<RecentlyViewedProductsPro
     </>
   )
 }
-export const Plugin = DemoRecentlyViewedProducts

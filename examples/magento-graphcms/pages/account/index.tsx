@@ -1,10 +1,11 @@
 import { PageOptions } from '@graphcommerce/framer-next-pages'
-import { useQuery } from '@graphcommerce/graphql'
+import { cacheFirst } from '@graphcommerce/graphql'
 import {
   AccountDashboardDocument,
   AccountMenu,
   AccountMenuItem,
   AddressSingleLine,
+  getCustomerAccountIsDisabled,
   OrderStateLabelInline,
   SignOutForm,
   useCustomerQuery,
@@ -23,9 +24,10 @@ import {
   iconPerson,
   iconShutdown,
   iconStar,
-  TimeAgo,
   LayoutTitle,
   LayoutHeader,
+  iconBin,
+  RelativeToTimeFormat,
 } from '@graphcommerce/next-ui'
 import { i18n } from '@lingui/core'
 import { Trans } from '@lingui/react'
@@ -40,16 +42,11 @@ function AccountIndexPage() {
     fetchPolicy: 'cache-and-network',
   })
 
-  const { data: config } = useQuery(StoreConfigDocument)
-  const locale = config?.storeConfig?.locale?.replace('_', '-')
-
   const customer = dashboard.data?.customer
   const address =
     customer?.addresses?.filter((a) => a?.default_shipping)?.[0] || customer?.addresses?.[0]
   const orders = customer?.orders
   const latestOrder = orders?.items?.[(orders?.items?.length ?? 1) - 1]
-
-  const latestOrderDate = new Date(latestOrder?.order_date ?? new Date())
 
   return (
     <>
@@ -93,11 +90,11 @@ function AccountIndexPage() {
               subtitle={
                 latestOrder ? (
                   <>
-                    <time dateTime={latestOrderDate.toDateString()}>
-                      <TimeAgo date={latestOrderDate} locale={locale} />
-                    </time>
+                    <RelativeToTimeFormat styleFormat='short'>
+                      {latestOrder?.order_date}
+                    </RelativeToTimeFormat>
                     {', '}
-                    {latestOrder?.items && <OrderStateLabelInline items={latestOrder?.items} />}
+                    {latestOrder?.items && <OrderStateLabelInline {...latestOrder} />}
                   </>
                 ) : undefined
               }
@@ -129,6 +126,16 @@ function AccountIndexPage() {
                 '&:hover': { background: theme.palette.background.paper },
               })}
             />
+            {import.meta.graphCommerce.magentoVersion >= 246 &&
+              import.meta.graphCommerce.customerDeleteEnabled && (
+                <AccountMenuItem
+                  href='/account/delete'
+                  disableRipple
+                  iconSrc={iconBin}
+                  title={<Trans id='Delete account' />}
+                />
+              )}
+
             <SignOutForm
               // eslint-disable-next-line react/no-unstable-nested-components
               button={({ formState }) => (
@@ -156,11 +163,16 @@ AccountIndexPage.pageOptions = pageOptions
 
 export default AccountIndexPage
 
-export const getStaticProps: GetPageStaticProps = async ({ locale }) => {
-  const staticClient = graphqlSsrClient(locale)
-  const client = graphqlSharedClient(locale)
+export const getStaticProps: GetPageStaticProps = async (context) => {
+  if (getCustomerAccountIsDisabled(context.locale)) return { notFound: true }
+
+  const staticClient = graphqlSsrClient(context)
+  const client = graphqlSharedClient(context)
   const conf = client.query({ query: StoreConfigDocument })
-  const layout = staticClient.query({ query: LayoutDocument, fetchPolicy: 'cache-first' })
+  const layout = staticClient.query({
+    query: LayoutDocument,
+    fetchPolicy: cacheFirst(staticClient),
+  })
 
   return {
     props: {

@@ -1,5 +1,4 @@
 import {
-  NormalizedCacheObject,
   ApolloClient,
   ApolloLink,
   errorLink,
@@ -9,19 +8,24 @@ import {
   graphqlConfig,
   mergeTypePolicies,
   FetchPolicy,
+  DefaultOptions,
+  PreviewConfig,
+  NormalizedCacheObject,
 } from '@graphcommerce/graphql'
 import { MeshApolloLink, getBuiltMesh } from '@graphcommerce/graphql-mesh'
 import { storefrontConfig, storefrontConfigDefault } from '@graphcommerce/next-ui'
+import { GetStaticPropsContext } from 'next'
 import { i18nSsrLoader } from '../i18n/I18nProvider'
 
-function client(locale: string | undefined, fetchPolicy: FetchPolicy = 'no-cache') {
+function client(context: GetStaticPropsContext, fetchPolicy: FetchPolicy = 'no-cache') {
   const config = graphqlConfig({
-    storefront: storefrontConfig(locale) ?? storefrontConfigDefault(),
+    storefront: storefrontConfig(context.locale) ?? storefrontConfigDefault(),
+    ...(context as PreviewConfig),
   })
 
   return new ApolloClient({
     link: ApolloLink.from([
-      measurePerformanceLink,
+      ...(process.env.NODE_ENV === 'production' ? [measurePerformanceLink] : []),
       errorLink,
       ...config.links,
       new MeshApolloLink(getBuiltMesh()),
@@ -32,36 +36,33 @@ function client(locale: string | undefined, fetchPolicy: FetchPolicy = 'no-cache
     }),
     ssrMode: true,
     name: 'ssr',
-    defaultOptions: { query: { errorPolicy: 'all', fetchPolicy } },
+    defaultOptions: {
+      preview: context as PreviewConfig,
+      query: { errorPolicy: 'all', fetchPolicy },
+    } as DefaultOptions,
   })
 }
-
-const sharedClient: {
-  [locale: string]: ApolloClient<NormalizedCacheObject>
-} = {}
 
 /**
  * Any queries made with the graphqlSharedClient will be send to the browser and injected in the
  * browser's cache.
  */
-export function graphqlSharedClient(locale: string | undefined) {
-  if (!locale) return client(locale, 'cache-first')
-
-  // Create a client if it doesn't exist for the locale.
-  if (!sharedClient[locale]) sharedClient[locale] = client(locale, 'cache-first')
-  return sharedClient[locale]
+export function graphqlSharedClient(context: GetStaticPropsContext) {
+  if (context.preview || context.draftMode) return client(context, 'no-cache')
+  return client(context, 'cache-first')
 }
 
 const ssrClient: {
   [locale: string]: ApolloClient<NormalizedCacheObject>
 } = {}
 
-export function graphqlSsrClient(locale: string | undefined) {
+export function graphqlSsrClient(context: GetStaticPropsContext) {
+  if (context.preview || context.draftMode) return client(context, 'no-cache')
+  const locale = context.locale ?? storefrontConfigDefault().locale
   i18nSsrLoader(locale)
-  if (!locale) return client(locale, 'no-cache')
 
   // Create a client if it doesn't exist for the locale.
-  if (!ssrClient[locale]) ssrClient[locale] = client(locale, 'no-cache')
+  if (!ssrClient[locale]) ssrClient[locale] = client(context, 'no-cache')
 
   return ssrClient[locale]
 }

@@ -1,12 +1,13 @@
 import { Scroller, ScrollerButton, ScrollerProvider } from '@graphcommerce/framer-scroller'
 import {
+  IconSvg,
+  extendableComponent,
   iconChevronLeft,
   iconChevronRight,
-  IconSvg,
   useScrollY,
-  extendableComponent,
 } from '@graphcommerce/next-ui'
-import { Box, styled, SxProps, Theme } from '@mui/material'
+import type { SxProps, Theme } from '@mui/material'
+import { Box, styled } from '@mui/material'
 import { m, useTransform } from 'framer-motion'
 import React, { useEffect, useRef, useState } from 'react'
 
@@ -17,7 +18,7 @@ export type ProductListFiltersContainerProps = { children: React.ReactNode; sx?:
 type OwnerState = {
   isSticky: boolean
 }
-const name = 'ProductListFiltersContainer' as const
+const name = 'ProductListFiltersContainer'
 const parts = [
   'wrapper',
   'container',
@@ -97,7 +98,7 @@ export function ProductListFiltersContainer(props: ProductListFiltersContainerPr
           top: theme.page.vertical,
           zIndex: 9,
           margin: '0 auto',
-          maxWidth: `calc(100% - 96px - ${theme.spacings.sm} * 2)`,
+
           [theme.breakpoints.down('md')]: {
             textAlign: 'center',
             maxWidth: 'unset',
@@ -136,8 +137,7 @@ export function ProductListFiltersContainer(props: ProductListFiltersContainerPr
             className={classes.scroller}
             hideScrollbar
             sx={(theme) => ({
-              paddingLeft: theme.page.horizontal,
-              paddingRight: theme.page.horizontal,
+              px: theme.page.horizontal,
               paddingBottom: '1px',
               [theme.breakpoints.up('md')]: {
                 borderRadius: '99em',
@@ -145,7 +145,6 @@ export function ProductListFiltersContainer(props: ProductListFiltersContainerPr
                 paddingRight: '8px',
               },
               py: '5px',
-
               columnGap: '6px',
               gridAutoColumns: 'min-content',
             })}

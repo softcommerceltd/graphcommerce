@@ -1,7 +1,8 @@
 import { extendableComponent, responsiveVal } from '@graphcommerce/next-ui'
 import { Trans } from '@lingui/react'
-import { Box, Divider, SxProps, Theme, Typography } from '@mui/material'
-import { ProductListCountFragment } from './ProductListCount.gql'
+import type { SxProps, Theme } from '@mui/material'
+import { Box, Divider, Typography } from '@mui/material'
+import type { ProductListCountFragment } from './ProductListCount.gql'
 
 const { classes, selectors } = extendableComponent('ProductListCount', [
   'root',
@@ -11,10 +12,11 @@ const { classes, selectors } = extendableComponent('ProductListCount', [
 
 export type ProductCountProps = ProductListCountFragment & {
   sx?: SxProps<Theme>
+  children?: React.ReactNode
 }
 
 export function ProductListCount(props: ProductCountProps) {
-  const { total_count, sx = [] } = props
+  const { total_count, children, sx = [] } = props
 
   return (
     <Box
@@ -41,6 +43,7 @@ export function ProductListCount(props: ProductCountProps) {
         className={classes.count}
         sx={{ lineHeight: 0 }}
       >
+        {children ? <> {children} </> : null}
         {total_count === 0 && <Trans id='no products' />}
         {total_count === 1 && <Trans id='one product' />}
         {(total_count ?? 0) > 1 && <Trans id='{total_count} products' values={{ total_count }} />}

@@ -1,3 +1,4 @@
+import type { Direction } from '@graphcommerce/framer-next-pages'
 import { Scroller, useScrollerContext, useScrollTo } from '@graphcommerce/framer-scroller'
 import {
   dvh,
@@ -6,10 +7,11 @@ import {
   useElementScroll,
   useIsomorphicLayoutEffect,
 } from '@graphcommerce/framer-utils'
-import { Box, styled, SxProps, Theme, useTheme, useThemeProps } from '@mui/material'
+import type { SxProps, Theme } from '@mui/material'
+import { Box, styled, useTheme, useThemeProps } from '@mui/material'
+import type { MotionProps } from 'framer-motion'
 import {
   m,
-  MotionProps,
   motionValue,
   useDomEvent,
   useMotionValue,
@@ -17,11 +19,13 @@ import {
   useTransform,
 } from 'framer-motion'
 import React, { useCallback, useEffect, useRef } from 'react'
-import { LayoutProvider } from '../../Layout/components/LayoutProvider'
-import { ExtendableComponent, extendableComponent } from '../../Styles'
 import { useMatchMedia } from '../../hooks/useMatchMedia'
+import { LayoutProvider } from '../../Layout/components/LayoutProvider'
+import type { ExtendableComponent } from '../../Styles'
+import { extendableComponent } from '../../Styles'
+import { useContainerSizing } from '../../Theme'
 
-export type LayoutOverlayVariant = 'left' | 'bottom' | 'right'
+export type LayoutOverlayVariant = 'left' | 'bottom' | 'right' | 'top'
 export type LayoutOverlaySize = 'floating' | 'minimal' | 'full'
 export type LayoutOverlayAlign = 'start' | 'end' | 'center' | 'stretch'
 
@@ -46,7 +50,7 @@ export type LayoutOverlayBaseProps = {
   sx?: SxProps<Theme>
   sxBackdrop?: SxProps<Theme>
   active: boolean
-  direction?: 1 | -1
+  direction?: Direction
   onClosed: () => void
   offsetPageY?: number
   isPresent: boolean
@@ -59,6 +63,9 @@ export type LayoutOverlayBaseProps = {
 
   /* For `variantMd='left|right' */
   widthMd?: string | false
+
+  disableAnimation?: boolean
+  disableDrag?: boolean
 } & StyleProps &
   OverridableProps
 
@@ -68,7 +75,7 @@ enum OverlayPosition {
   CLOSED = 0,
 }
 
-const name = 'LayoutOverlayBase' as const
+const name = 'LayoutOverlayBase'
 const parts = [
   'scroller',
   'backdrop',
@@ -113,6 +120,8 @@ export function OverlayBase(incomingProps: LayoutOverlayBaseProps) {
     disableInert,
     widthMd = 'max(800px, 50vw)',
     widthSm = 'max(300px, 80vw)',
+    disableAnimation = false,
+    disableDrag = false,
   } = props
 
   const th = useTheme()
@@ -123,7 +132,8 @@ export function OverlayBase(incomingProps: LayoutOverlayBaseProps) {
     props.smSpacingTop ?? ((theme) => `calc(${theme.appShell.headerHeightSm} * 0.5)`)
   )(th)
 
-  const { scrollerRef, snap, scroll, getScrollSnapPositions, disableSnap } = useScrollerContext()
+  const { scrollerRef, snap, scroll, getScrollSnapPositions, disableSnap, enableSnap } =
+    useScrollerContext()
   const scrollTo = useScrollTo()
 
   const beforeRef = useRef<HTMLDivElement>(null)
@@ -134,10 +144,15 @@ export function OverlayBase(incomingProps: LayoutOverlayBaseProps) {
   const overlayPaneScroll = useElementScroll(overlayPaneRef)
 
   const classes = withState({ variantSm, variantMd, sizeSm, sizeMd, justifySm, justifyMd })
+  const containerSizing = useContainerSizing('shell')
 
   const match = useMatchMedia()
   const positions = useConstant(() => ({
-    open: { x: motionValue(0), y: motionValue(0), visible: motionValue(0) },
+    open: {
+      x: motionValue(0),
+      y: motionValue(0),
+      visible: motionValue(direction === 0 || disableDrag ? 1 : 0),
+    },
     closed: { x: motionValue(0), y: motionValue(0) },
   }))
 
@@ -159,6 +174,9 @@ export function OverlayBase(incomingProps: LayoutOverlayBaseProps) {
     if (variant() === 'right') {
       return { open: [x.length - 1, 0], closed: [0, 0] }
     }
+    if (variant() === 'top') {
+      return { open: [0, y.length - 2], closed: [0, y.length - 1] }
+    }
     return { open: [0, y.length - 1], closed: [0, 0] }
   }, [getScrollSnapPositions, variant])
 
@@ -173,6 +191,10 @@ export function OverlayBase(incomingProps: LayoutOverlayBaseProps) {
       if (variant() === 'left') {
         positions.closed.x.set(x[x.length - 1])
         positions.open.x.set(x[x.length - 2])
+      }
+      if (variant() === 'top') {
+        positions.closed.y.set(y[y.length - 1])
+        positions.open.y.set(y[y.length - 2])
       }
       if (variant() === 'right') {
         positions.open.x.set(x[x.length - 1])
@@ -195,8 +217,8 @@ export function OverlayBase(incomingProps: LayoutOverlayBaseProps) {
         scroll.y.set(positions.closed.y.get())
       } else {
         disableSnap()
-        scroller.scrollLeft = scroll.x.getPrevious()
-        scroller.scrollTop = scroll.y.getPrevious()
+        scroller.scrollLeft = scroll.x.getPrevious() ?? 0
+        scroller.scrollTop = scroll.y.getPrevious() ?? 0
         // eslint-disable-next-line @typescript-eslint/no-floating-promises
         scrollTo(openClosePositions().open, { stopAnimationOnScroll: false })
       }
@@ -209,6 +231,10 @@ export function OverlayBase(incomingProps: LayoutOverlayBaseProps) {
       if (variant() === 'left') {
         const closedX = positions.closed.x.get()
         vis = closedX === 0 ? 0 : clampRound((scroll.x.get() - closedX) / -closedX)
+      }
+      if (variant() === 'top') {
+        const closedY = positions.closed.y.get()
+        vis = closedY === 0 ? 0 : clampRound((scroll.y.get() - closedY) / -closedY)
       }
       if (variant() === 'right') {
         const openedX = positions.open.x.get()
@@ -277,29 +303,56 @@ export function OverlayBase(incomingProps: LayoutOverlayBaseProps) {
   useIsomorphicLayoutEffect(() => {
     const scroller = scrollerRef.current
 
-    if (!scroller || !isPresent) return
+    if (!scroller || !isPresent || position.get() === OverlayPosition.OPENED) return
 
     if (variant() === 'right') document.body.style.overflow = 'hidden'
 
-    if (position.get() !== OverlayPosition.OPENED && !scroll.animating.get()) {
+    if (direction === 0 || disableAnimation) {
+      disableSnap()
+      scroller.scrollTop = positions.open.y.get()
+      scroller.scrollLeft = positions.open.x.get()
+      scroll.y.set(positions.open.y.get())
+      scroll.x.set(positions.open.x.get())
+      position.set(OverlayPosition.OPENED)
+      enableSnap()
+    } else if (!scroll.animating.get()) {
       // eslint-disable-next-line @typescript-eslint/no-floating-promises
       scrollTo(openClosePositions().open, { stopAnimationOnScroll: false }).then(() =>
         position.set(OverlayPosition.OPENED),
       )
     }
-  }, [isPresent, openClosePositions, position, scroll.animating, scrollTo, scrollerRef, variant])
+  }, [
+    direction,
+    disableAnimation,
+    disableSnap,
+    enableSnap,
+    isPresent,
+    openClosePositions,
+    position,
+    positions.open.x,
+    positions.open.y,
+    scroll.animating,
+    scroll.x,
+    scroll.y,
+    scrollTo,
+    scrollerRef,
+    variant,
+  ])
 
   // When the overlay is closed by navigating away, we're closing the overlay.
   useEffect(() => {
     const scroller = scrollerRef.current
     if (isPresent || !scroller) return
 
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
-    scrollTo(openClosePositions().closed, { stopAnimationOnScroll: false }).then(() => {
+    const doAfter = () => {
       safeToRemove?.()
       document.body.style.overflow = ''
-    })
-  }, [isPresent, openClosePositions, position, positions, safeToRemove, scrollTo, scrollerRef])
+    }
+
+    if (disableAnimation) doAfter()
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises
+    else scrollTo(openClosePositions().closed, { stopAnimationOnScroll: false }).then(doAfter)
+  }, [disableAnimation, isPresent, openClosePositions, safeToRemove, scrollTo, scrollerRef])
 
   // Only go back to a previous page if the overlay isn't closed.
   const closeOverlay = useCallback(() => {
@@ -391,6 +444,7 @@ export function OverlayBase(incomingProps: LayoutOverlayBaseProps) {
         className={`${classes.scroller} ${className ?? ''}`}
         grid={false}
         onClick={onClickAway}
+        disableDrag={disableDrag}
         hideScrollbar
         sx={[
           (theme) => ({
@@ -410,22 +464,22 @@ export function OverlayBase(incomingProps: LayoutOverlayBaseProps) {
                 overscrollBehaviorX: 'none',
               },
               '&.variantSmLeft': {
-                gridTemplate: `"overlay beforeOverlay"`,
+                gridTemplate: '"overlay beforeOverlay"',
                 borderTopRightRadius: theme.shape.borderRadius * 3,
                 borderBottomRightRadius: theme.shape.borderRadius * 3,
               },
               '&.variantSmRight': {
-                gridTemplate: `"beforeOverlay overlay"`,
+                gridTemplate: '"beforeOverlay overlay"',
                 borderTopLeftRadius: theme.shape.borderRadius * 3,
                 borderBottomLeftRadius: theme.shape.borderRadius * 3,
               },
               '&.variantSmBottom': {
                 overscrollBehaviorY: 'none',
-                gridTemplate: `"beforeOverlay" "overlay"`,
+                gridTemplate: '"beforeOverlay" "overlay"',
                 height: `calc(${dvh(100)} - 1px)`,
 
                 '&::after': {
-                  content: `""`,
+                  content: '""',
                   display: 'block',
                   position: 'absolute',
                   width: '100%',
@@ -438,20 +492,22 @@ export function OverlayBase(incomingProps: LayoutOverlayBaseProps) {
             },
             [theme.breakpoints.up('md')]: {
               '&.variantMdLeft': {
-                gridTemplate: `"overlay beforeOverlay"`,
+                gridTemplate: '"overlay beforeOverlay"',
                 borderTopRightRadius: theme.shape.borderRadius * 4,
                 borderBottomRightRadius: theme.shape.borderRadius * 4,
               },
               '&.variantMdRight': {
-                gridTemplate: `"beforeOverlay overlay"`,
+                gridTemplate: '"beforeOverlay overlay"',
                 borderTopLeftRadius: theme.shape.borderRadius * 4,
                 borderBottomLeftRadius: theme.shape.borderRadius * 4,
               },
               '&.variantMdBottom': {
-                [theme.breakpoints.up('md')]: {
-                  gridTemplate: `"beforeOverlay" "overlay"`,
-                  height: dvh(100),
-                },
+                gridTemplate: '"beforeOverlay" "overlay"',
+                height: dvh(100),
+              },
+              '&.variantMdTop': {
+                gridTemplate: '"overlay" "beforeOverlay"',
+                height: dvh(100),
               },
             },
           }),
@@ -479,7 +535,7 @@ export function OverlayBase(incomingProps: LayoutOverlayBaseProps) {
               '&.variantMdLeft, &.variantMdRight': {
                 width: dvw(100),
               },
-              '&.variantMdBottom': {
+              '&.variantMdBottom, &.variantMdTop': {
                 height: dvh(100),
               },
             },
@@ -496,7 +552,7 @@ export function OverlayBase(incomingProps: LayoutOverlayBaseProps) {
             '&.variantMdBottom, &.variantMdRight': {
               scrollSnapAlign: 'end',
             },
-            '&.variantMdLeft': {
+            '&.variantMdTop, &.variantMdLeft': {
               scrollSnapAlign: 'start',
             },
             [theme.breakpoints.down('md')]: {
@@ -510,7 +566,7 @@ export function OverlayBase(incomingProps: LayoutOverlayBaseProps) {
               justifyContent: justifyMd,
               alignItems: justifyMd,
 
-              '&.variantMdBottom': {
+              '&.variantMdBottom, &.variantMdTop': {
                 display: 'grid',
               },
               '&.sizeMdFloating': {
@@ -518,6 +574,8 @@ export function OverlayBase(incomingProps: LayoutOverlayBaseProps) {
               },
               '&.sizeMdFloating.variantMdBottom': {
                 marginTop: `calc(${theme.page.vertical} * -1)`,
+                maxWidth: containerSizing.value ?? 'unset',
+                mx: 'auto',
               },
             },
           })}
@@ -557,6 +615,7 @@ export function OverlayBase(incomingProps: LayoutOverlayBaseProps) {
                   borderTopLeftRadius: `${theme.shape.borderRadius * 3}px`,
                   borderTopRightRadius: `${theme.shape.borderRadius * 3}px`,
                 },
+
                 '&.variantSmLeft, &.variantSmRight': {
                   overscrollBehaviorY: 'none',
                   width: widthSm || 'max-content',
@@ -578,11 +637,14 @@ export function OverlayBase(incomingProps: LayoutOverlayBaseProps) {
                 overflowY: 'auto',
                 overflowX: 'hidden',
                 overscrollBehavior: 'contain',
+                '&.variantMdTop.sizeMdFloating:not(.justifyMdStretch)': {
+                  width: widthMd,
+                },
                 '&.variantMdBottom.sizeMdFloating:not(.justifyMdStretch)': {
                   width: widthMd,
                 },
 
-                '&.variantMdBottom': {
+                '&.variantMdBottom, &.variantMdTop': {
                   maxHeight: `calc(${dvh(100)} - ${mdSpacingTop})`,
                   paddingTop: mdSpacingTop,
                   boxSizing: 'border-box',
@@ -645,9 +707,13 @@ export function OverlayBase(incomingProps: LayoutOverlayBaseProps) {
                     borderTopLeftRadius: theme.shape.borderRadius * 4,
                     borderTopRightRadius: theme.shape.borderRadius * 4,
                   },
+                  '&.variantMdTop': {
+                    borderBottomLeftRadius: theme.shape.borderRadius * 4,
+                    borderBottomRightRadius: theme.shape.borderRadius * 4,
+                  },
                   '&.sizeMdFull': {
                     minHeight: dvh(100),
-                    '&.variantMdBottom': {
+                    '&.variantMdBottom, &.variantMdTop': {
                       minHeight: '100%',
                     },
                   },

@@ -1,16 +1,11 @@
-import {
-  ApolloClient,
-  NormalizedCacheObject,
-  ApolloLink,
-  InMemoryCache,
-  ApolloProvider,
-  HttpLink,
-} from '@apollo/client'
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { useStorefrontConfig } from '@graphcommerce/next-ui/hooks/useStorefrontConfig'
+import type { DefaultOptions, NormalizedCacheObject } from '@apollo/client'
+import { ApolloClient, ApolloLink, ApolloProvider, HttpLink, InMemoryCache } from '@apollo/client'
 import type { AppProps } from 'next/app'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { ApolloClientConfig, graphqlConfig, ApolloClientConfigInput } from '../../config'
+import type { ApolloClientConfig, ApolloClientConfigInput, PreviewConfig } from '../../config'
+import { graphqlConfig } from '../../config'
 import fragments from '../../generated/fragments.json'
 import { createCacheReviver } from './createCacheReviver'
 import { errorLink } from './errorLink'
@@ -31,13 +26,19 @@ export type GraphQLProviderProps = AppProps &
  * Take a look at the props to see possible customization options.
  */
 export function GraphQLProvider(props: GraphQLProviderProps) {
-  const { children, links, migrations, policies, pageProps } = props
+  const { children, links, migrations, policies, pageProps, router } = props
   const state = (pageProps as { apolloState?: NormalizedCacheObject }).apolloState
 
   const stateRef = useRef(state)
 
   const storefront = useStorefrontConfig()
-  const conf = graphqlConfig({ links, migrations, policies, storefront })
+  const conf = graphqlConfig({
+    links,
+    migrations,
+    policies,
+    storefront,
+    preview: router.isPreview,
+  })
   const config = useRef<ApolloClientConfig>(conf)
   config.current = conf
 
@@ -62,7 +63,17 @@ export function GraphQLProvider(props: GraphQLProviderProps) {
     if (stateRef.current) cache.restore(stateRef.current)
 
     const ssrMode = typeof window === 'undefined'
-    return new ApolloClient({ link, cache, name: 'web', ssrMode })
+    return new ApolloClient({
+      link,
+      cache,
+      name: 'web',
+      ssrMode,
+      defaultOptions: {
+        preview: {
+          preview: router.isPreview,
+        } as PreviewConfig,
+      } as DefaultOptions,
+    })
   })
 
   useEffect(() => {

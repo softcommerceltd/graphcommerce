@@ -1,5 +1,5 @@
 import { PageOptions } from '@graphcommerce/framer-next-pages'
-import { ForgotPasswordForm } from '@graphcommerce/magento-customer'
+import { ForgotPasswordForm, getCustomerAccountIsDisabled } from '@graphcommerce/magento-customer'
 import { PageMeta, StoreConfigDocument } from '@graphcommerce/magento-store'
 import { GetStaticProps, LayoutOverlayHeader, LayoutTitle } from '@graphcommerce/next-ui'
 import { i18n } from '@lingui/core'
@@ -34,22 +34,23 @@ function AccountForgotPasswordPage() {
 
 const pageOptions: PageOptions<LayoutOverlayProps> = {
   overlayGroup: 'account-public',
-  sharedKey: () => 'account-signin',
+  sharedKey: () => 'account-public',
   Layout: LayoutOverlay,
 }
 AccountForgotPasswordPage.pageOptions = pageOptions
 
 export default AccountForgotPasswordPage
 
-export const getStaticProps: GetPageStaticProps = async ({ locale }) => {
-  const client = graphqlSharedClient(locale)
+export const getStaticProps: GetPageStaticProps = async (context) => {
+  if (getCustomerAccountIsDisabled(context.locale)) return { notFound: true }
+
+  const client = graphqlSharedClient(context)
   const conf = client.query({ query: StoreConfigDocument })
 
   return {
     props: {
       apolloState: await conf.then(() => client.cache.extract()),
       variantMd: 'bottom',
-      size: 'max',
       up: { href: '/account/signin', title: i18n._(/* i18n */ 'Sign in') },
     },
   }

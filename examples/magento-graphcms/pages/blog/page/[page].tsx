@@ -1,15 +1,17 @@
 import { PageOptions } from '@graphcommerce/framer-next-pages'
-import { hygraphPageContent, HygraphPagesQuery } from '@graphcommerce/graphcms-ui'
+import { cacheFirst } from '@graphcommerce/graphql'
+import { hygraphPageContent, HygraphPagesQuery } from '@graphcommerce/hygraph-ui'
 import { StoreConfigDocument } from '@graphcommerce/magento-store'
 import {
+  Container,
   PageMeta,
   GetStaticProps,
   Pagination,
   LayoutTitle,
   LayoutHeader,
+  Breadcrumbs,
 } from '@graphcommerce/next-ui'
-import { i18n } from '@lingui/core'
-import { Container, Link } from '@mui/material'
+import { Link } from '@mui/material'
 import { GetStaticPaths } from 'next'
 import { useRouter } from 'next/router'
 import React from 'react'
@@ -43,13 +45,16 @@ function BlogPage(props: Props) {
     <>
       <PageMeta title={title} metaDescription={title} canonical={`/${page.url}`} />
 
-      <LayoutHeader floatingMd>
+      <LayoutHeader floatingMd hideMd={import.meta.graphCommerce.breadcrumbs}>
         <LayoutTitle size='small' component='span'>
           {title}
         </LayoutTitle>
       </LayoutHeader>
 
-      <Container maxWidth='xl'>
+      <Container maxWidth={false}>
+        {import.meta.graphCommerce.breadcrumbs && (
+          <Breadcrumbs breadcrumbs={[{ href: `/${page.url}`, name: title }]} />
+        )}
         <LayoutTitle variant='h1'>{title}</LayoutTitle>
       </Container>
 
@@ -80,7 +85,7 @@ export const getStaticPaths: GetPageStaticPaths = async ({ locales = [] }) => {
   if (process.env.NODE_ENV === 'development') return { paths: [], fallback: 'blocking' }
 
   const responses = locales.map(async (locale) => {
-    const staticClient = graphqlSsrClient(locale)
+    const staticClient = graphqlSsrClient({ locale })
     const blogPosts = staticClient.query({ query: BlogPathsDocument })
     const total = Math.ceil((await blogPosts).data.pagesConnection.aggregate.count / pageSize)
     const pages: string[] = []
@@ -93,14 +98,18 @@ export const getStaticPaths: GetPageStaticPaths = async ({ locales = [] }) => {
   return { paths, fallback: 'blocking' }
 }
 
-export const getStaticProps: GetPageStaticProps = async ({ locale, params }) => {
+export const getStaticProps: GetPageStaticProps = async (context) => {
+  const { params } = context
   const skip = Math.abs((Number(params?.page ?? '1') - 1) * pageSize)
-  const client = graphqlSharedClient(locale)
-  const staticClient = graphqlSsrClient(locale)
+  const client = graphqlSharedClient(context)
+  const staticClient = graphqlSsrClient(context)
   const conf = client.query({ query: StoreConfigDocument })
 
   const defaultPage = hygraphPageContent(staticClient, 'blog')
-  const layout = staticClient.query({ query: LayoutDocument, fetchPolicy: 'cache-first' })
+  const layout = staticClient.query({
+    query: LayoutDocument,
+    fetchPolicy: cacheFirst(staticClient),
+  })
 
   const blogPosts = staticClient.query({
     query: BlogListDocument,
@@ -118,8 +127,7 @@ export const getStaticProps: GetPageStaticProps = async ({ locale, params }) => 
       ...(await blogPosts).data,
       ...(await blogPaths).data,
       ...(await layout).data,
-      urlEntity: { relative_url: `blog` },
-      up: { href: '/blog', title: i18n._(/* i18n */ 'Blog') },
+      urlEntity: { relative_url: 'blog' },
       apolloState: await conf.then(() => client.cache.extract()),
     },
     revalidate: 60 * 20,

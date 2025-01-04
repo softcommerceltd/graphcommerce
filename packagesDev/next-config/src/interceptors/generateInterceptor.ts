@@ -2,8 +2,8 @@
 import prettierConf from '@graphcommerce/prettier-config-pwa'
 // eslint-disable-next-line import/no-extraneous-dependencies
 import prettier from 'prettier'
-import { GraphCommerceDebugConfig } from '../generated/config'
-import { ResolveDependencyReturn } from '../utils/resolveDependency'
+import type { GraphCommerceDebugConfig } from '../generated/config'
+import type { ResolveDependencyReturn } from '../utils/resolveDependency'
 import { RenameVisitor } from './RenameVisitor'
 import { parseSync, printSync } from './swc'
 
@@ -14,9 +14,11 @@ type PluginBaseConfig = {
   sourceModule: string
   targetExport: string
   enabled: boolean
-  ifConfig?: string | [string, string]
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ifConfig?: string | [string, any]
 }
 
+/** @public */
 export function isPluginBaseConfig(plugin: Partial<PluginBaseConfig>): plugin is PluginBaseConfig {
   return (
     typeof plugin.type === 'string' &&
@@ -30,6 +32,7 @@ type ReactPluginConfig = PluginBaseConfig & { type: 'component' }
 type MethodPluginConfig = PluginBaseConfig & { type: 'function' }
 type ReplacePluginConfig = PluginBaseConfig & { type: 'replace' }
 
+/** @public */
 export function isReactPluginConfig(
   plugin: Partial<PluginBaseConfig>,
 ): plugin is ReactPluginConfig {
@@ -37,6 +40,7 @@ export function isReactPluginConfig(
   return plugin.type === 'component'
 }
 
+/** @public */
 export function isMethodPluginConfig(
   plugin: Partial<PluginBaseConfig>,
 ): plugin is MethodPluginConfig {
@@ -44,6 +48,7 @@ export function isMethodPluginConfig(
   return plugin.type === 'function'
 }
 
+/** @public */
 export function isReplacePluginConfig(
   plugin: Partial<PluginBaseConfig>,
 ): plugin is ReactPluginConfig {
@@ -66,15 +71,14 @@ export type Interceptor = ResolveDependencyReturn & {
 
 export type MaterializedPlugin = Interceptor & { template: string }
 
-export const SOURCE_START = '/** Original source starts here (do not modify!): **/'
-export const SOURCE_END = '/** Original source ends here (do not modify!) **/'
+export const SOURCE_START = '/** SOURCE_START */'
+export const SOURCE_END = '/** SOURCE_END */'
 
 const originalSuffix = 'Original'
-const sourceSuffix = 'Plugin'
 const interceptorSuffix = 'Interceptor'
 const disabledSuffix = 'Disabled'
 const name = (plugin: PluginConfig) =>
-  `${plugin.sourceModule
+  `${plugin.sourceExport}${plugin.sourceModule
     .split('/')
     [plugin.sourceModule.split('/').length - 1].replace(/[^a-zA-Z0-9]/g, '')}`
 
@@ -103,9 +107,7 @@ const generateIdentifyer = (s: string) =>
     }, 0),
   ).toString()
 
-/**
- * The is on the first line, with the format: \/* hash:${identifer} *\/
- */
+/** The is on the first line, with the format: /* hash:${identifer} */
 function extractIdentifier(source: string | undefined) {
   if (!source) return null
   const match = source.match(/\/\* hash:(\d+) \*\//)
@@ -180,9 +182,7 @@ export async function generateInterceptor(
               s.replace(originalSuffix, disabledSuffix),
             ).visitModule(ast)
 
-            carryProps.push(interceptorPropsName(name(p)))
-
-            result = `type ${interceptorPropsName(name(p))} = React.ComponentProps<typeof ${sourceName(name(p))}>`
+            carryProps.push(`React.ComponentProps<typeof ${sourceName(name(p))}>`)
 
             pluginSee.push(
               `@see {${sourceName(name(p))}} for replacement of the original source (original source not used)`,
@@ -195,7 +195,7 @@ export async function generateInterceptor(
             result = `
               type ${interceptorPropsName(name(p))} = ${carryProps.join(' & ')} & OmitPrev<React.ComponentProps<typeof ${sourceName(name(p))}>, 'Prev'>
               
-              const ${interceptorName(name(p))} = (props: ${interceptorPropsName(name(p))}) => ${withBraces ? `{` : '('}
+              const ${interceptorName(name(p))} = (props: ${interceptorPropsName(name(p))}) => ${withBraces ? '{' : '('}
                 ${config.pluginStatus ? `logOnce(\`🔌 Rendering ${base} with plugin(s): ${wrapChain} wrapping <${base}/>\`)` : ''}
 
                 ${
@@ -204,8 +204,8 @@ export async function generateInterceptor(
                   logOnce('${fileName(p)} does not spread props to prev: <Prev {...props}/>. This will cause issues if multiple plugins are applied to this component.')`
                     : ''
                 }
-                ${withBraces ? `return` : ''} <${sourceName(name(p))} {...props} Prev={${carry}} />
-              ${withBraces ? `}` : ')'}`
+                ${withBraces ? 'return' : ''} <${sourceName(name(p))} {...props} Prev={${carry}} />
+              ${withBraces ? '}' : ')'}`
 
             carryProps = [interceptorPropsName(name(p))]
             pluginSee.push(`@see {${sourceName(name(p))}} for source of applied plugin`)
@@ -225,7 +225,7 @@ export async function generateInterceptor(
         .filter((v) => !!v)
         .join('\n')
 
-      const isComponent = plugins.every((p) => isReplacePluginConfig(p) || isReactPluginConfig(p))
+      const isComponent = plugins.every((p) => isReactPluginConfig(p))
       if (isComponent && plugins.some((p) => isMethodPluginConfig(p))) {
         throw new Error(`Cannot mix React and Method plugins for ${base} in ${dependency}.`)
       }
@@ -272,7 +272,7 @@ export async function generateInterceptor(
     /* This file is automatically generated for ${dependency} */
     ${
       Object.values(targetExports).some((t) => t.some((p) => p.type === 'component'))
-        ? `import type { DistributedOmit as OmitPrev } from 'type-fest'`
+        ? "import type { DistributedOmit as OmitPrev } from 'type-fest'"
         : ''
     }
 
@@ -289,6 +289,7 @@ export async function generateInterceptor(
   try {
     templateFormatted = await prettier.format(template, { ...prettierConf, parser: 'typescript' })
   } catch (e) {
+    // eslint-disable-next-line no-console
     console.log('Error formatting interceptor: ', e, 'using raw template.')
     templateFormatted = template
   }

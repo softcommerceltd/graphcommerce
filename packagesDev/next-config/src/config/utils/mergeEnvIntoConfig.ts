@@ -1,28 +1,27 @@
 /* eslint-disable import/no-extraneous-dependencies */
-import { mergeDeep, cloneDeep } from '@apollo/client/utilities'
+import { cloneDeep, mergeDeep } from '@apollo/client/utilities'
 import chalk from 'chalk'
 import { get, set } from 'lodash'
 import snakeCase from 'lodash/snakeCase'
+import type { ZodAny, ZodRawShape, ZodTypeAny } from 'zod'
 import {
   z,
-  ZodObject,
-  ZodBoolean,
   ZodArray,
-  ZodString,
-  ZodNumber,
-  ZodNullable,
-  ZodOptional,
+  ZodBoolean,
+  ZodDefault,
   ZodEffects,
-  ZodRawShape,
   ZodEnum,
-  ZodTypeAny,
-  ZodAny,
+  ZodNullable,
+  ZodNumber,
+  ZodObject,
+  ZodOptional,
+  ZodString,
 } from 'zod'
 import diff from './diff'
 
 const fmt = (s: string) => s.split(/(\d+)/).map(snakeCase).join('')
 export const toEnvStr = (path: string[]) => ['GC', ...path].map(fmt).join('_').toUpperCase()
-export const dotNotation = (pathParts: string[]) =>
+const dotNotation = (pathParts: string[]) =>
   pathParts
     .map((v) => {
       const idx = Number(v)
@@ -61,13 +60,14 @@ export function configToEnvSchema(schema: ZodNode) {
     if (node instanceof ZodEffects) node = node.innerType()
     if (node instanceof ZodOptional) node = node.unwrap()
     if (node instanceof ZodNullable) node = node.unwrap()
+    if (node instanceof ZodDefault) node = node.removeDefault()
 
     if (node instanceof ZodObject) {
       if (path.length > 0) {
         envSchema[toEnvStr(path)] = z
           .string()
           .optional()
-          .refine(isJSON, { message: `Invalid JSON` })
+          .refine(isJSON, { message: 'Invalid JSON' })
           .transform((val) => (val ? JSON.parse(val) : val))
         envToDot[toEnvStr(path)] = dotNotation(path)
       }
@@ -87,7 +87,7 @@ export function configToEnvSchema(schema: ZodNode) {
         envSchema[toEnvStr(path)] = z
           .string()
           .optional()
-          .refine(isJSON, { message: `Invalid JSON` })
+          .refine(isJSON, { message: 'Invalid JSON' })
           .transform((val) => (val ? JSON.parse(val) : val))
         envToDot[toEnvStr(path)] = dotNotation(path)
       }
@@ -99,7 +99,13 @@ export function configToEnvSchema(schema: ZodNode) {
       return
     }
 
-    if (node instanceof ZodString || node instanceof ZodNumber || node instanceof ZodEnum) {
+    if (node instanceof ZodNumber) {
+      envSchema[toEnvStr(path)] = z.coerce.number().optional()
+      envToDot[toEnvStr(path)] = dotNotation(path)
+      return
+    }
+
+    if (node instanceof ZodString || node instanceof ZodEnum) {
       envSchema[toEnvStr(path)] = node.optional()
       envToDot[toEnvStr(path)] = dotNotation(path)
       return
@@ -138,7 +144,7 @@ export type ApplyResultItem = {
 }
 export type ApplyResult = ApplyResultItem[]
 
-export const filterEnv = (env: Record<string, string | undefined>) =>
+const filterEnv = (env: Record<string, string | undefined>) =>
   Object.fromEntries(Object.entries(env).filter(([key]) => key.startsWith('GC_')))
 
 export function mergeEnvIntoConfig(
@@ -201,7 +207,7 @@ export function formatAppliedEnv(applyResult: ApplyResult) {
   const lines = applyResult.map(({ from, to, envValue, envVar, dotVar, error, warning }) => {
     const fromFmt = chalk.red(JSON.stringify(from))
     const toFmt = chalk.green(JSON.stringify(to))
-    const envVariableFmt = `${envVar}='${envValue}'`
+    const envVariableFmt = `${envVar}`
     const dotVariableFmt = chalk.bold.underline(`${dotVar}`)
 
     const baseLog = `${envVariableFmt} => ${dotVariableFmt}`
@@ -217,18 +223,17 @@ export function formatAppliedEnv(applyResult: ApplyResult) {
 
     if (!dotVar) return chalk.red(`${envVariableFmt} => ignored (no matching config)`)
 
-    if (from === undefined && to === undefined)
-      return ` = ${baseLog}: (ignored, no change/wrong format)`
-    if (from === undefined && to !== undefined) return ` ${chalk.green('+')} ${baseLog}: ${toFmt}`
-    if (from !== undefined && to === undefined) return ` ${chalk.red('-')} ${baseLog}: ${fromFmt}`
-    return ` ${chalk.yellowBright('~')} ${baseLog}: ${fromFmt} => ${toFmt}`
+    if (from === undefined && to === undefined) return ` = ${baseLog}: (ignored)`
+    if (from === undefined && to !== undefined) return ` ${chalk.green('+')} ${baseLog}`
+    if (from !== undefined && to === undefined) return ` ${chalk.red('-')} ${baseLog}`
+    return ` ${chalk.yellowBright('~')} ${baseLog}`
   })
 
-  let header = chalk.blueBright(`info`)
-  if (hasWarning) header = chalk.yellowBright(`warning`)
-  if (hasError) header = chalk.yellowBright(`error`)
+  let header = chalk.blueBright('info')
+  if (hasWarning) header = chalk.yellowBright('warning')
+  if (hasError) header = chalk.yellowBright('error')
 
-  header += `   - Loaded GraphCommerce env variables`
+  header += '   - Loaded GraphCommerce env variables'
 
   return [header, ...lines].join('\n')
 }

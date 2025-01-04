@@ -1,5 +1,7 @@
-import { Accordion, AccordionSummary, AccordionDetails, SxProps, Theme } from '@mui/material'
-import { useState, ReactNode } from 'react'
+import type { SxProps, Theme } from '@mui/material'
+import { Accordion, AccordionDetails, AccordionSummary } from '@mui/material'
+import type { ReactNode } from 'react'
+import { useState } from 'react'
 import { IconSvg } from '../IconSvg'
 import { iconChevronDown } from '../icons'
 
@@ -29,6 +31,7 @@ export function ActionCardAccordion(props: ActionCardAccordionProps) {
           '&.Mui-expanded': { my: 0 },
           '::before': { display: 'none' },
           border: 'none',
+          borderBottom: `1px solid ${theme.palette.divider}`,
           '&:not(.Mui-expanded)': { borderBottom: `1px solid ${theme.palette.divider}` },
         }),
         ...(Array.isArray(sx) ? sx : [sx]),
@@ -39,7 +42,7 @@ export function ActionCardAccordion(props: ActionCardAccordionProps) {
         expandIcon={<IconSvg src={iconChevronDown} />}
         sx={{
           px: 0,
-          typography: 'h6',
+          typography: 'subtitle1',
           minHeight: 54,
           '& .MuiAccordionSummary-content': {
             display: 'flex',

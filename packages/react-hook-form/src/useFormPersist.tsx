@@ -1,14 +1,7 @@
-import { useMemoObject } from '@graphcommerce/next-ui/hooks/useMemoObject'
+/* eslint-disable react/no-unused-prop-types */
 import { useEffect } from 'react'
-import {
-  FieldValues,
-  UseFormReturn,
-  Path,
-  FieldPath,
-  PathValue,
-  useWatch,
-  useFormState,
-} from 'react-hook-form'
+import type { FieldPath, FieldValues, Path, PathValue, UseFormReturn } from 'react-hook-form'
+import { useFormState, useWatch } from 'react-hook-form'
 
 export type UseFormPersistOptions<
   TFieldValues extends FieldValues = FieldValues,
@@ -39,7 +32,8 @@ export type UseFormPersistOptions<
  *
  * Todo: Use wath callback so it won't trigger a rerender
  *
- * @deprecated Please use <FormPersist /> instead. This method causes INP problems.
+ * @deprecated Please use the FormPersist component instead. This method causes INP problems.
+ * @public
  */
 export function useFormPersist<V extends FieldValues>(options: UseFormPersistOptions<V>) {
   const { form, name, storage = 'sessionStorage', exclude = [], persist = [] } = options
@@ -98,6 +92,10 @@ export function useFormPersist<V extends FieldValues>(options: UseFormPersistOpt
   }, [name, storage, valuesJson])
 }
 
+/**
+ * Please make sure to always include this component at the end of your form because of useWatch
+ * rules: https://react-hook-form.com/docs/usewatch
+ */
 export function FormPersist<V extends FieldValues>(props: UseFormPersistOptions<V>) {
   useFormPersist(props)
   return null

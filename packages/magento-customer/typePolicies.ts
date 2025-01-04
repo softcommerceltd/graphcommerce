@@ -16,6 +16,7 @@ const generateCustomerToken: FieldPolicy<Mutation['generateCustomerToken']> = {
           token: options.readField('token', incoming) as string,
           createdAt: new Date().toUTCString(),
           valid: true,
+          xMagentoCacheId: null,
         },
       },
     })
@@ -30,5 +31,7 @@ export const customerTypePolicies: StrictTypedTypePolicies = {
 
 export const migrateCustomer: MigrateCache = (oldCache, newCache) => {
   const token = oldCache.readQuery({ query: CustomerTokenDocument })
-  newCache.writeQuery({ query: CustomerTokenDocument, data: token, broadcast: true })
+  if (token) {
+    newCache.writeQuery({ query: CustomerTokenDocument, data: token, broadcast: true })
+  }
 }

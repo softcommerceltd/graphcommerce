@@ -1,23 +1,31 @@
-#!/usr/bin/env node
 /* eslint-disable import/no-extraneous-dependencies */
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import { exit } from 'node:process'
+import type { meshConfig as meshConfigBase } from '@graphcommerce/graphql-mesh/meshConfig'
 import {
-  isMonorepo,
   loadConfig,
   packageRoots,
   replaceConfigInString,
   resolveDependenciesSync,
+  sig,
 } from '@graphcommerce/next-config'
-import { graphqlMesh, DEFAULT_CLI_PARAMS, GraphQLMeshCLIParams } from '@graphql-mesh/cli'
-import { Logger, YamlConfig } from '@graphql-mesh/types'
-import { DefaultLogger } from '@graphql-mesh/utils'
+import type { GraphQLMeshCLIParams } from '@graphql-mesh/cli'
+import { DEFAULT_CLI_PARAMS, graphqlMesh } from '@graphql-mesh/cli'
+import type { Logger, YamlConfig } from '@graphql-mesh/types'
+import { DefaultLogger, fileURLToPath } from '@graphql-mesh/utils'
 import dotenv from 'dotenv'
+import 'tsx/cjs'
+import 'tsx/esm'
+import type { Entries, OmitIndexSignature } from 'type-fest'
 import yaml from 'yaml'
 import { findConfig } from '../utils/findConfig'
 
 dotenv.config()
+
+function resolvePath(pathStr: string) {
+  return fileURLToPath(import.meta.resolve(pathStr))
+}
 
 export function handleFatalError(e: Error, logger: Logger = new DefaultLogger('◈')) {
   logger.error(e.stack || e.message)
@@ -27,7 +35,7 @@ export function handleFatalError(e: Error, logger: Logger = new DefaultLogger('�
 }
 
 const root = process.cwd()
-const meshDir = path.dirname(require.resolve('@graphcommerce/graphql-mesh'))
+const meshDir = path.dirname(resolvePath('@graphcommerce/graphql-mesh'))
 const relativePath = path.join(path.relative(meshDir, root), '/')
 
 const cliParams: GraphQLMeshCLIParams = {
@@ -35,7 +43,7 @@ const cliParams: GraphQLMeshCLIParams = {
   playgroundTitle: 'GraphCommerce® Mesh',
 }
 
-const tmpMesh = `_tmp_mesh`
+const tmpMesh = '_tmp_mesh'
 const tmpMeshLocation = path.join(root, `.${tmpMesh}rc.yml`)
 
 async function cleanup() {
@@ -51,10 +59,20 @@ async function cleanup() {
 }
 
 const main = async () => {
-  const conf = (await findConfig({})) as YamlConfig.Config
+  const baseConf = (await findConfig({})) as YamlConfig.Config
+  const graphCommerce = loadConfig(root)
+
+  const meshConfigf = (await import(
+    '@graphcommerce/graphql-mesh/meshConfig.interceptor'
+  )) as unknown as {
+    default: {
+      meshConfig: typeof meshConfigBase
+    }
+  }
+  const conf = meshConfigf.default.meshConfig(baseConf, graphCommerce)
 
   // We're configuring a custom fetch function
-  conf.customFetch = require.resolve('@graphcommerce/graphql-mesh/customFetch')
+  conf.customFetch = '@graphcommerce/graphql-mesh/customFetch'
   conf.serve = { ...conf.serve, endpoint: '/api/graphql' }
 
   // Rewrite additionalResolvers so we can use module resolution more easily
@@ -62,9 +80,30 @@ const main = async () => {
   conf.additionalResolvers = conf.additionalResolvers?.map((additionalResolver) => {
     if (typeof additionalResolver !== 'string') return additionalResolver
     if (additionalResolver.startsWith('@'))
-      return path.relative(root, require.resolve(additionalResolver))
+      return path.relative(root, resolvePath(additionalResolver))
 
     return additionalResolver
+  })
+
+  type DefinedHandler = OmitIndexSignature<YamlConfig.Handler>
+
+  conf.sources = conf.sources.map((source) => {
+    const definedHandlers = Object.entries(source.handler) as Entries<DefinedHandler>
+    return {
+      ...source,
+      handler: Object.fromEntries(
+        definedHandlers.map(([key, value]) => {
+          if (key === 'openapi' && value) {
+            const openapi = value as NonNullable<DefinedHandler['openapi']>
+            if (openapi.source.startsWith('@')) {
+              return [key, { ...openapi, source: path.relative(root, resolvePath(openapi.source)) }]
+            }
+          }
+
+          return [key, value]
+        }),
+      ),
+    }
   })
 
   // Rewrite additionalTypeDefs so we can use module resolution more easily
@@ -73,18 +112,39 @@ const main = async () => {
     Array.isArray(conf.additionalTypeDefs) ? conf.additionalTypeDefs : [conf.additionalTypeDefs]
   ).map((additionalTypeDef) => {
     if (typeof additionalTypeDef === 'string' && additionalTypeDef.startsWith('@'))
-      return path.relative(root, require.resolve(additionalTypeDef))
+      return path.relative(root, resolvePath(additionalTypeDef))
 
     return additionalTypeDef
   })
 
   // Scan the current working directory to also read all graphqls files.
-  conf.additionalTypeDefs.push('**/*.graphqls')
+  conf.additionalTypeDefs.push('graphql/**/*.graphqls')
+  conf.additionalTypeDefs.push('components/**/*.graphqls')
+  conf.additionalTypeDefs.push('lib/**/*.graphqls')
+  conf.additionalTypeDefs.push('app/**/*.graphqls')
 
   const deps = resolveDependenciesSync()
   const packages = [...deps.values()].filter((p) => p !== '.')
+
+  const mV = graphCommerce.magentoVersion ?? 246
+  sig()
+
   packageRoots(packages).forEach((r) => {
-    conf.additionalTypeDefs.push(`${r}/**/*.graphqls`)
+    conf.additionalTypeDefs.push(`${r}/*/schema/**/*.graphqls`)
+
+    const scanVersions = [245, 246, 247, 248, 249, 250, 251, 252, 253, 254]
+      .filter((v) => v > mV)
+      .map((v) => `${r}/*/schema-${v}/**/*.graphqls`)
+
+    conf.additionalTypeDefs.push(...scanVersions)
+
+    if (globalThis.gcl?.includes(atob('QGdyYXBoY29tbWVyY2UvYWRvYmUtY29tbWVyY2U='))) {
+      conf.additionalTypeDefs.push(`${r}/*/schema-ac/**/*.graphqls`)
+      const scanVersionAC = [245, 246, 247, 248, 249, 250, 251, 252, 253, 254]
+        .filter((v) => v > mV)
+        .map((v) => `${r}/*/schema-ac-${v}/**/*.graphqls`)
+      conf.additionalTypeDefs.push(...scanVersionAC)
+    }
   })
 
   if (!conf.serve) conf.serve = {}
@@ -99,7 +159,7 @@ const main = async () => {
     },
   ]
 
-  const yamlString = replaceConfigInString(yaml.stringify(conf), loadConfig(root))
+  const yamlString = replaceConfigInString(yaml.stringify(conf), graphCommerce)
   await fs.writeFile(tmpMeshLocation, yamlString)
 
   // Reexport the mesh to is can be used by packages

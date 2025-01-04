@@ -1,21 +1,22 @@
 /* eslint-disable @typescript-eslint/no-restricted-imports */
+
 /* eslint-disable prefer-const */
+
 /* eslint-disable no-param-reassign */
+
 /* eslint-disable @next/next/no-img-element */
+
 /* eslint-disable jsx-a11y/alt-text */
-import { useForkRef, styled, SxProps, Theme } from '@mui/material'
-import {
-  LoaderValue,
-  VALID_LOADERS,
-  ImageConfigComplete,
-  imageConfigDefault,
-} from 'next/dist/shared/lib/image-config'
+import type { SxProps, Theme } from '@mui/material'
+import { styled, useForkRef } from '@mui/material'
+import type { ImageConfigComplete, LoaderValue } from 'next/dist/shared/lib/image-config'
+import { imageConfigDefault, VALID_LOADERS } from 'next/dist/shared/lib/image-config'
 import { ImageConfigContext } from 'next/dist/shared/lib/image-config-context.shared-runtime'
 import Head from 'next/head'
-import type { ImageLoaderProps, ImageLoader } from 'next/image'
+import type { ImageLoader, ImageLoaderProps } from 'next/image'
 import React, { useContext, useEffect, useMemo, useRef } from 'react'
+import type { ImageLoaderPropsWithConfig } from '../config/config'
 import {
-  ImageLoaderPropsWithConfig,
   akamaiLoader,
   cloudinaryLoader,
   configDeviceSizes,
@@ -25,7 +26,7 @@ import {
 } from '../config/config'
 
 if (typeof window === 'undefined') {
-  // eslint-disable-next-line no-underscore-dangle
+  // eslint-disable-next-line no-underscore-dangle, @typescript-eslint/no-explicit-any, @typescript-eslint/no-extra-semi
   ;(global as any).__NEXT_IMAGE_IMPORTED = true
 }
 
@@ -66,18 +67,22 @@ interface StaticRequire {
 
 export type StaticImport = StaticRequire | StaticImageData
 
+/** @public */
 export function isStaticRequire(src: StaticRequire | StaticImageData): src is StaticRequire {
   return (src as StaticRequire).default !== undefined
 }
 
+/** @public */
 export function isStaticImageData(src: StaticRequire | StaticImageData): src is StaticImageData {
   return (src as StaticImageData).src !== undefined
 }
 
+/** @public */
 export function isStaticImport(src: string | StaticImport): src is StaticImport {
   return typeof src === 'object' && (isStaticRequire(src) || isStaticImageData(src))
 }
 
+/** @public */
 export function srcToString(src: StaticImport | string) {
   return isStaticImport(src) ? (isStaticRequire(src) ? src.default : src).src : src
 }
@@ -457,7 +462,7 @@ const Image = React.forwardRef<HTMLImageElement, ImageProps>(
       quality,
       sizes,
       width,
-      scale: 1.5,
+      scale: 2,
     })
     const srcSet2x = generateSrcSet({
       config,
@@ -467,7 +472,7 @@ const Image = React.forwardRef<HTMLImageElement, ImageProps>(
       quality,
       sizes,
       width,
-      scale: 1,
+      scale: 1.333,
     })
     const srcSet1x = generateSrcSet({
       config,
@@ -477,7 +482,7 @@ const Image = React.forwardRef<HTMLImageElement, ImageProps>(
       quality,
       sizes,
       width,
-      scale: 0.5,
+      scale: 0.667,
     })
 
     if (layout !== 'fixed' && !style) style = {}

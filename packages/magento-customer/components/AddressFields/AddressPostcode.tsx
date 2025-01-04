@@ -1,6 +1,8 @@
-import { FieldPath, FieldValues, TextFieldElement } from '@graphcommerce/ecommerce-ui'
-import { Trans } from '@lingui/react'
-import { AddressFieldsOptions, useAddressFieldsForm } from './useAddressFieldsForm'
+import type { FieldPath, FieldValues } from '@graphcommerce/ecommerce-ui'
+import { TextFieldElement } from '@graphcommerce/ecommerce-ui'
+import { Trans } from '@lingui/macro'
+import type { AddressFieldsOptions } from './useAddressFieldsForm'
+import { useAddressFieldsForm } from './useAddressFieldsForm'
 
 export function AddressPostcode<
   TFieldValues extends FieldValues = FieldValues,
@@ -16,7 +18,7 @@ export function AddressPostcode<
       variant='outlined'
       type='text'
       required={required[name.postcode]}
-      label={<Trans id='Postcode' />}
+      label={<Trans>Postcode</Trans>}
       showValid
     />
   )

@@ -1,4 +1,5 @@
-import { capitalize, Interpolation, Theme } from '@mui/material'
+import type { Interpolation, Theme } from '@mui/material'
+import { capitalize } from '@mui/material'
 
 export type ExtendableComponent<StyleProps extends Record<string, unknown>> = {
   /**
@@ -15,7 +16,7 @@ export type ExtendableComponent<StyleProps extends Record<string, unknown>> = {
   variants?: { props: Partial<StyleProps>; style: Interpolation<{ theme: Theme }> }[]
 }
 
-export function slotClasses<Name extends string, ClassNames extends ReadonlyArray<string>>(
+function slotClasses<Name extends string, ClassNames extends ReadonlyArray<string>>(
   name: Name,
   slotNames: ClassNames,
 ) {
@@ -25,7 +26,7 @@ export function slotClasses<Name extends string, ClassNames extends ReadonlyArra
 }
 
 /** Maps incoming classes to a selectors that can be used to extend the component */
-export const partselectorsMap = <O extends Record<string, string>>(
+const partselectorsMap = <O extends Record<string, string>>(
   obj: O,
 ): {
   [P in keyof O]: `& .${O[P]}`

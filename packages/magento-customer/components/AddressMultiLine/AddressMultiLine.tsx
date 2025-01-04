@@ -1,7 +1,8 @@
 import { useFindCountry } from '@graphcommerce/magento-store'
 import { extendableComponent } from '@graphcommerce/next-ui'
-import { SxProps, Theme, Typography } from '@mui/material'
-import { CustomerAddressFragment } from '../CreateCustomerAddressForm/CustomerAddress.gql'
+import type { SxProps, Theme } from '@mui/material'
+import { Typography } from '@mui/material'
+import type { CustomerAddressFragment } from '../CreateCustomerAddressForm/CustomerAddress.gql'
 
 // exports.getEuMembers = function()
 // {
@@ -12,7 +13,7 @@ import { CustomerAddressFragment } from '../CreateCustomerAddressForm/CustomerAd
 // 	return exports.getEuMembers().indexOf(code.toUpperCase()) != -1;
 // };
 
-type AddressMultiLineProps = CustomerAddressFragment & { sx?: SxProps<Theme> }
+export type AddressMultiLineProps = CustomerAddressFragment & { sx?: SxProps<Theme> }
 
 const name = 'AddressMultiLine'
 const parts = ['root', 'title'] as const
@@ -31,6 +32,8 @@ export function AddressMultiLine(props: AddressMultiLineProps) {
     city,
     postcode,
     country_code,
+    telephone,
+    vat_id,
     sx = [],
   } = props
   const countryName = useFindCountry(country_code)?.full_name_locale ?? country_code
@@ -55,6 +58,8 @@ export function AddressMultiLine(props: AddressMultiLineProps) {
         {regionName && `${regionName}, `}
         {countryName}
       </div>
+      <div>{telephone}</div>
+      <div>{vat_id}</div>
     </Typography>
   )
 }

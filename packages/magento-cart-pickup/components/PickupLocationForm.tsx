@@ -1,24 +1,26 @@
+import type { ActionCardItemBase, UseFormComposeOptions } from '@graphcommerce/ecommerce-ui'
 import {
+  ActionCardListForm,
   ApolloErrorAlert,
   TextFieldElement,
   useFormCompose,
-  UseFormComposeOptions,
 } from '@graphcommerce/ecommerce-ui'
 import { useQuery } from '@graphcommerce/graphql'
-import { ProductInfoInput } from '@graphcommerce/graphql-mesh'
+import type { ProductInfoInput } from '@graphcommerce/graphql-mesh'
 import { useCartQuery, useFormGqlMutationCart } from '@graphcommerce/magento-cart'
 import { useShippingMethod } from '@graphcommerce/magento-cart-shipping-method'
 import { GetShippingMethodsDocument } from '@graphcommerce/magento-cart-shipping-method/components/ShippingMethodForm/GetShippingMethods.gql'
-import { ActionCardItemBase, ActionCardListForm, FormRow } from '@graphcommerce/next-ui'
+import { FormRow } from '@graphcommerce/next-ui'
 import { Trans } from '@lingui/react'
-import { useMemo, useDeferredValue } from 'react'
+import { useDeferredValue, useMemo } from 'react'
 import { GetPickupLocationsForProductsDocument } from '../graphql/GetPickupLocationsForProducts.gql'
-import {
-  SetPickupLocationOnCartDocument,
+import type {
   SetPickupLocationOnCartMutation,
   SetPickupLocationOnCartMutationVariables,
 } from '../graphql/SetPickupLocationOnCart.gql'
-import { PickupLocationActionCard, Location } from './PickupLocationActionCard'
+import { SetPickupLocationOnCartDocument } from '../graphql/SetPickupLocationOnCart.gql'
+import type { Location } from './PickupLocationActionCard'
+import { PickupLocationActionCard } from './PickupLocationActionCard'
 
 export type PickupLocationFormProps = Pick<UseFormComposeOptions, 'step'>
 
@@ -42,7 +44,7 @@ export function PickupLocationForm(props: PickupLocationFormProps) {
 
   const defaultSearchTerm = shippingAddress?.pickup_location_code
     ? undefined
-    : shippingAddress?.postcode ?? undefined
+    : (shippingAddress?.postcode ?? undefined)
 
   const form = useFormGqlMutationCart<
     SetPickupLocationOnCartMutation,

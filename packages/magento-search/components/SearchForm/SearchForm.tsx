@@ -1,7 +1,9 @@
-import { TextFieldElement, TextFieldElementProps } from '@graphcommerce/ecommerce-ui'
+import type { TextFieldElementProps } from '@graphcommerce/ecommerce-ui'
+import { TextFieldElement } from '@graphcommerce/ecommerce-ui'
 import { extendableComponent } from '@graphcommerce/next-ui'
 import { FormAutoSubmit, useForm } from '@graphcommerce/react-hook-form'
-import { Box, SxProps, Theme } from '@mui/material'
+import type { SxProps, Theme } from '@mui/material'
+import { Box } from '@mui/material'
 import { useRouter } from 'next/router'
 import { useEffect, useRef } from 'react'
 import { SearchFormAdornment } from './SearchFormAdornment'
@@ -29,7 +31,9 @@ export function SearchForm(props: SearchFormProps) {
   const form = useForm({ defaultValues: { search } })
   const { handleSubmit, setValue, control } = form
 
-  const submit = handleSubmit((formData) => router.replace(`/${urlHandle}/${formData.search}`))
+  const submit = handleSubmit((formData) =>
+    router.replace(`/${urlHandle}/${formData.search}`, undefined, { shallow: true }),
+  )
 
   const endAdornment = (
     <SearchFormAdornment

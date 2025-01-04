@@ -1,10 +1,11 @@
 import { useWatch } from '@graphcommerce/ecommerce-ui'
 import { useCustomerSession } from '@graphcommerce/magento-customer'
-import { AddToCartItemSelector, useFormAddProductsToCart } from '@graphcommerce/magento-product'
+import type { AddToCartItemSelector } from '@graphcommerce/magento-product'
+import { useFormAddProductsToCart } from '@graphcommerce/magento-product'
 import { nonNullable } from '@graphcommerce/next-ui'
 import { useEventCallback } from '@mui/material'
 import { useState } from 'react'
-import { WishlistItemFragment } from '../queries/WishlistItem.gql'
+import type { WishlistItemFragment } from '../queries/WishlistItem.gql'
 import { useAddProductsToWishlist } from './useAddProductsToWishlist/useAddProductsToWishlist'
 import { useRemoveProductsFromWishlist } from './useRemoveProductsFromWishlist'
 import { useWishlistItems } from './useWishlistitems'
@@ -57,12 +58,11 @@ export function useAddProductToWishlistAction(
     if (selectedOptions.length !== productOptionsCount) return wishlistOptionsCount === 0
     if (wishlistOptionsCount !== productOptionsCount) return false
 
-    return selectedOptions.every(
-      (option) =>
-        item.configurable_options?.some(
-          // If an option is undefined this means the item is a wishlistItem but not all options were selected prior.
-          (opt) => opt?.configurable_product_option_value_uid === option,
-        ),
+    return selectedOptions.every((option) =>
+      item.configurable_options?.some(
+        // If an option is undefined this means the item is a wishlistItem but not all options were selected prior.
+        (opt) => opt?.configurable_product_option_value_uid === option,
+      ),
     )
   })
 
@@ -92,8 +92,8 @@ export function useAddProductToWishlistAction(
       const configurableOptions = selectedOptions.map((selected_option) => {
         if (product.__typename !== 'ConfigurableProduct') return null
 
-        const configurable_option = product.configurable_options?.find(
-          (confOption) => confOption?.values?.find((values) => values?.uid === selected_option),
+        const configurable_option = product.configurable_options?.find((confOption) =>
+          confOption?.values?.find((values) => values?.uid === selected_option),
         )
 
         const value = configurable_option?.values?.find((values) => values?.uid === selected_option)
@@ -133,6 +133,7 @@ export function useAddProductToWishlistAction(
     }),
     toggleItem: useEventCallback(toggleItem),
     cancelBubble: useEventCallback((e) => {
+      e.stopPropagation()
       e.preventDefault()
     }),
     showSuccess,

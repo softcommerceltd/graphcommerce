@@ -2,16 +2,18 @@ import type {
   AddToCartItemSelector,
   ProductPageDescriptionProps,
 } from '@graphcommerce/magento-product'
-import type { IfConfig, PluginProps } from '@graphcommerce/next-config'
+import type { PluginConfig, PluginProps } from '@graphcommerce/next-config'
 import { useConfigurableSelectedVariant } from '../../hooks'
 
-export const component = 'ProductPageDescription'
-export const exported = '@graphcommerce/magento-product'
-export const ifConfig: IfConfig = 'configurableVariantValues.content'
+export const config: PluginConfig = {
+  type: 'component',
+  module: '@graphcommerce/magento-product',
+  ifConfig: 'configurableVariantValues.content',
+}
 
-export const ConfigurableProductPageDescription = (
+export function ProductPageDescription(
   props: PluginProps<ProductPageDescriptionProps & AddToCartItemSelector>,
-) => {
+) {
   const { Prev, product, index, ...rest } = props
   const variant = useConfigurableSelectedVariant({ url_key: product.url_key, index })
 
@@ -28,5 +30,3 @@ export const ConfigurableProductPageDescription = (
     />
   )
 }
-
-export const Plugin = ConfigurableProductPageDescription

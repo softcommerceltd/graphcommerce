@@ -6,10 +6,12 @@ import {
   WaitForQueries,
 } from '@graphcommerce/ecommerce-ui'
 import { PageOptions } from '@graphcommerce/framer-next-pages'
+import { cacheFirst } from '@graphcommerce/graphql'
 import {
-  ApolloCartErrorAlert,
   ApolloCartErrorFullPage,
+  ApolloCartErrorSnackbar,
   EmptyCart,
+  getCheckoutIsDisabled,
   useCartQuery,
 } from '@graphcommerce/magento-cart'
 import { ShippingPageDocument } from '@graphcommerce/magento-cart-checkout'
@@ -62,7 +64,7 @@ function ShippingPage() {
         }
       >
         {shippingPage.error && <ApolloCartErrorFullPage error={shippingPage.error} />}
-        {!shippingPage.error && !cartExists && <EmptyCart />}
+        {!shippingPage.error && !cartExists && <EmptyCart disableMargin />}
         {!shippingPage.error && cartExists && (
           <ComposedForm>
             <LayoutHeader
@@ -97,7 +99,7 @@ function ShippingPage() {
               <>
                 {(customerAddresses.data?.customer?.addresses?.length ?? 0) >= 1 ? (
                   <CustomerAddressForm step={2} sx={(theme) => ({ mt: theme.spacings.lg })}>
-                    <ShippingAddressForm ignoreCache step={3} />
+                    <ShippingAddressForm step={3} />
                   </CustomerAddressForm>
                 ) : (
                   <>
@@ -126,7 +128,7 @@ function ShippingPage() {
                           <Trans id='Next' />
                         </ComposedSubmitButton>
                       </FormActions>
-                      <ApolloCartErrorAlert
+                      <ApolloCartErrorSnackbar
                         error={renderProps.buttonState.isSubmitting ? undefined : renderProps.error}
                       />
                     </>
@@ -148,12 +150,17 @@ ShippingPage.pageOptions = pageOptions
 
 export default ShippingPage
 
-export const getStaticProps: GetPageStaticProps = async ({ locale }) => {
-  const client = graphqlSharedClient(locale)
-  const conf = client.query({ query: StoreConfigDocument })
-  const staticClient = graphqlSsrClient(locale)
+export const getStaticProps: GetPageStaticProps = async (context) => {
+  if (getCheckoutIsDisabled(context.locale)) return { notFound: true }
 
-  const layout = staticClient.query({ query: LayoutDocument, fetchPolicy: 'cache-first' })
+  const client = graphqlSharedClient(context)
+  const conf = client.query({ query: StoreConfigDocument })
+  const staticClient = graphqlSsrClient(context)
+
+  const layout = staticClient.query({
+    query: LayoutDocument,
+    fetchPolicy: cacheFirst(staticClient),
+  })
 
   return {
     props: {

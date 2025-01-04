@@ -1,12 +1,13 @@
 import { PageOptions } from '@graphcommerce/framer-next-pages'
-import { Asset, hygraphPageContent, HygraphPagesQuery } from '@graphcommerce/graphcms-ui'
-import { flushMeasurePerf } from '@graphcommerce/graphql'
+import { cacheFirst, flushMeasurePerf, PrivateQueryMaskProvider } from '@graphcommerce/graphql'
+import { Asset, hygraphPageContent, HygraphPagesQuery } from '@graphcommerce/hygraph-ui'
 import {
-  CategoryChildren,
-  CategoryDescription,
+  appendSiblingsAsChildren,
+  CategoryBreadcrumbs,
   CategoryHeroNav,
   CategoryHeroNavTitle,
   CategoryMeta,
+  findParentBreadcrumbItem,
   getCategoryStaticPaths,
 } from '@graphcommerce/magento-category'
 import {
@@ -20,14 +21,24 @@ import {
   ProductListDocument,
   ProductListParams,
   ProductListQuery,
+  categoryDefaultsToProductListFilters,
+  useProductList,
+  productListLink,
 } from '@graphcommerce/magento-product'
-import { redirectOrNotFound, StoreConfigDocument } from '@graphcommerce/magento-store'
-import { GetStaticProps, LayoutHeader, LayoutTitle, MetaRobots } from '@graphcommerce/next-ui'
+import { redirectOrNotFound, redirectTo, StoreConfigDocument } from '@graphcommerce/magento-store'
+import {
+  Container,
+  GetStaticProps,
+  LayoutHeader,
+  LayoutTitle,
+  MetaRobots,
+} from '@graphcommerce/next-ui'
 import { i18n } from '@lingui/core'
-import { Container } from '@mui/material'
 import { GetStaticPaths } from 'next'
 import {
-  CategoryFilterLayout,
+  ProductListLayoutClassic,
+  ProductListLayoutDefault,
+  ProductListLayoutSidebar,
   LayoutDocument,
   LayoutNavigation,
   LayoutNavigationProps,
@@ -47,15 +58,19 @@ type GetPageStaticPaths = GetStaticPaths<CategoryRoute>
 type GetPageStaticProps = GetStaticProps<LayoutNavigationProps, CategoryProps, CategoryRoute>
 
 function CategoryPage(props: CategoryProps) {
-  const { categories, products, filters, params, filterTypes, pages } = props
+  const { categories, pages, ...rest } = props
+  const productList = useProductList({
+    ...rest,
+    category: categories?.items?.[0],
+  })
+  const { products, params, category } = productList
 
-  const category = categories?.items?.[0]
   const isLanding = category?.display_mode === 'PAGE'
   const page = pages?.[0]
-  const isCategory = params && category && products?.items && filterTypes
+  const isCategory = params && category && products?.items
 
   return (
-    <>
+    <PrivateQueryMaskProvider mask={productList.mask}>
       <CategoryMeta
         params={params}
         title={page?.metaTitle}
@@ -64,48 +79,71 @@ function CategoryPage(props: CategoryProps) {
         canonical={page?.url ? `/${page.url}` : undefined}
         {...category}
       />
-      <LayoutHeader floatingMd>
+      <LayoutHeader floatingMd hideMd={import.meta.graphCommerce.breadcrumbs}>
         <LayoutTitle size='small' component='span'>
           {category?.name ?? page.title}
         </LayoutTitle>
       </LayoutHeader>
-      {!isLanding && (
+      {!isCategory && !isLanding && (
         <Container maxWidth={false}>
-          <LayoutTitle
-            variant='h1'
-            gutterTop
-            sx={(theme) => ({
-              marginBottom: category?.description && theme.spacings.md,
-            })}
-            gutterBottom={
-              !isCategory || (!category?.description && category?.children?.length === 0)
-            }
-          >
-            {category?.name ?? page.title}
+          <LayoutTitle variant='h1' gutterTop gutterBottom>
+            {page.title}
           </LayoutTitle>
         </Container>
       )}
       {isCategory && isLanding && (
-        <CategoryHeroNav
-          {...category}
-          asset={pages?.[0]?.asset && <Asset asset={pages[0].asset} loading='eager' />}
-          title={<CategoryHeroNavTitle>{category?.name}</CategoryHeroNavTitle>}
-        />
+        <>
+          {import.meta.graphCommerce.breadcrumbs && (
+            <Container maxWidth={false}>
+              <CategoryBreadcrumbs
+                category={category}
+                sx={(theme) => ({
+                  height: 0,
+                  [theme.breakpoints.down('md')]: {
+                    '& .MuiBreadcrumbs-ol': { justifyContent: 'center' },
+                  },
+                })}
+              />
+            </Container>
+          )}
+          <CategoryHeroNav
+            {...category}
+            asset={page?.asset && <Asset asset={page.asset} loading='eager' />}
+            title={<CategoryHeroNavTitle>{category?.name}</CategoryHeroNavTitle>}
+          />
+        </>
       )}
-
       {isCategory && !isLanding && (
         <>
-          <CategoryDescription description={category.description} />
-          <CategoryChildren params={params}>{category.children}</CategoryChildren>
-          <CategoryFilterLayout
-            params={params}
-            filters={filters}
-            products={products}
-            filterTypes={filterTypes}
-            title={category.name ?? ''}
-            id={category.uid}
-            category={category}
-          />
+          {import.meta.graphCommerce.productFiltersPro &&
+            import.meta.graphCommerce.productFiltersLayout === 'SIDEBAR' && (
+              <ProductListLayoutSidebar
+                {...productList}
+                key={category.uid}
+                title={category.name ?? page.title ?? ''}
+                id={category.uid}
+                category={category}
+              />
+            )}
+          {import.meta.graphCommerce.productFiltersPro &&
+            import.meta.graphCommerce.productFiltersLayout !== 'SIDEBAR' && (
+              <ProductListLayoutDefault
+                {...productList}
+                key={category.uid}
+                title={category.name ?? page.title ?? ''}
+                id={category.uid}
+                category={category}
+              />
+            )}
+          {!import.meta.graphCommerce.productFiltersPro && (
+            <ProductListLayoutClassic
+              {...productList}
+              key={category.uid}
+              title={category.name ?? page.title ?? ''}
+              id={category.uid}
+              category={category}
+            />
+          )}
         </>
       )}
       {page && (
@@ -122,7 +160,7 @@ function CategoryPage(props: CategoryProps) {
           }}
         />
       )}
-    </>
+    </PrivateQueryMaskProvider>
   )
 }
 
@@ -137,31 +175,36 @@ export const getStaticPaths: GetPageStaticPaths = async ({ locales = [] }) => {
   // Disable getStaticPaths while in development mode
   if (process.env.NODE_ENV === 'development') return { paths: [], fallback: 'blocking' }
 
-  const path = (loc: string) => getCategoryStaticPaths(graphqlSsrClient(loc), loc)
+  const path = (locale: string) => getCategoryStaticPaths(graphqlSsrClient({ locale }), locale)
   const paths = (await Promise.all(locales.map(path))).flat(1)
   return { paths, fallback: 'blocking' }
 }
 
-export const getStaticProps: GetPageStaticProps = async ({ params, locale }) => {
+export const getStaticProps: GetPageStaticProps = async (context) => {
+  const { params, locale } = context
   const [url, query] = extractUrlQuery(params)
   if (!url || !query) return { notFound: true }
 
-  const client = graphqlSharedClient(locale)
+  const client = graphqlSharedClient(context)
   const conf = client.query({ query: StoreConfigDocument })
   const filterTypes = getFilterTypes(client)
 
-  const staticClient = graphqlSsrClient(locale)
+  const staticClient = graphqlSsrClient(context)
 
   const categoryPage = staticClient.query({
     query: CategoryPageDocument,
     variables: { url },
   })
-  const layout = staticClient.query({ query: LayoutDocument, fetchPolicy: 'cache-first' })
+  const layout = staticClient.query({
+    query: LayoutDocument,
+    fetchPolicy: cacheFirst(staticClient),
+  })
 
   const productListParams = parseParams(url, query, await filterTypes)
   const filteredCategoryUid = productListParams && productListParams.filters.category_uid?.in?.[0]
 
   const category = categoryPage.then((res) => res.data.categories?.items?.[0])
+  const waitForSiblings = appendSiblingsAsChildren(category, staticClient)
   let categoryUid = filteredCategoryUid
   if (!categoryUid) {
     categoryUid = (await category)?.uid ?? ''
@@ -169,14 +212,17 @@ export const getStaticProps: GetPageStaticProps = async ({ params, locale }) => 
   }
 
   const pages = hygraphPageContent(staticClient, url, category)
-  const hasCategory = Boolean(productListParams && categoryUid)
+  const hasCategory = !!productListParams && categoryUid
 
   const filters = hasCategory
     ? staticClient.query({
         query: ProductFiltersDocument,
-        variables: { filters: { category_uid: { eq: categoryUid } } },
+        variables: categoryDefaultsToProductListFilters(
+          await productListApplyCategoryDefaults(productListParams, (await conf).data, category),
+        ),
       })
     : undefined
+
   const products = hasCategory
     ? staticClient.query({
         query: ProductListDocument,
@@ -191,16 +237,24 @@ export const getStaticProps: GetPageStaticProps = async ({ params, locale }) => 
   const hasPage = filteredCategoryUid ? false : (await pages).data.pages.length > 0
   if (!hasCategory && !hasPage) return redirectOrNotFound(staticClient, conf, params, locale)
 
-  if ((await products)?.errors) return { notFound: true }
+  if ((await products)?.errors) {
+    const totalPages = (await filters)?.data.filters?.page_info?.total_pages ?? 0
+    if (productListParams?.currentPage && productListParams.currentPage > totalPages) {
+      const to = productListLink({ ...productListParams, currentPage: totalPages })
+      return redirectTo(to, false, locale)
+    }
 
-  const { category_name, category_url_path } =
-    (await categoryPage).data.categories?.items?.[0]?.breadcrumbs?.[0] ?? {}
+    return { notFound: true }
+  }
+
+  const { category_url_path, category_name } = findParentBreadcrumbItem(await category) ?? {}
 
   const up =
     category_url_path && category_name
       ? { href: `/${category_url_path}`, title: category_name }
-      : { href: `/`, title: i18n._(/* i18n */ 'Home') }
+      : { href: '/', title: i18n._(/* i18n */ 'Home') }
 
+  await waitForSiblings
   const result = {
     props: {
       ...(await categoryPage).data,

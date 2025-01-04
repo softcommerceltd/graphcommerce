@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.buildFragmentRegistry = void 0;
+exports.buildFragmentRegistry = buildFragmentRegistry;
+exports.default = buildFragmentResolver;
 const visitor_plugin_common_1 = require("@graphql-codegen/visitor-plugin-common");
 const graphql_1 = require("graphql");
 const utils_1 = require("./utils");
@@ -58,7 +59,7 @@ function buildFragmentRegistry({ generateFilePath }, { documents, config }, sche
                 const imports = getFragmentImports(possibleTypes.map((t) => t.name), fragment.name.value);
                 if (prev[fragment.name.value] &&
                     (0, graphql_1.print)(fragment) !== (0, graphql_1.print)(prev[fragment.name.value].node)) {
-                    duplicateFragmentNames.push(`${prev[fragment.name.value]} ${prev[fragment.name.value].filePath}`);
+                    duplicateFragmentNames.push(`${prev[fragment.name.value].node.name.value} ${prev[fragment.name.value].filePath}`);
                     duplicateFragmentNames.push(`${fragment.name.value} ${fragment.loc?.source.name}`);
                 }
                 prev[fragment.name.value] = {
@@ -77,7 +78,6 @@ ${duplicateFragmentNames.join('\n')}\n\n`);
     }
     return registry;
 }
-exports.buildFragmentRegistry = buildFragmentRegistry;
 /** Builds a fragment "resolver" that collects `externalFragments` definitions and `fragmentImportStatements` */
 function buildFragmentResolver(collectorOptions, presetOptions, schemaObject) {
     const fragmentRegistry = buildFragmentRegistry(collectorOptions, presetOptions, schemaObject);
@@ -128,4 +128,3 @@ function buildFragmentResolver(collectorOptions, presetOptions, schemaObject) {
     }
     return resolveFragments;
 }
-exports.default = buildFragmentResolver;

@@ -1,11 +1,12 @@
-import CircularDependencyPlugin from 'circular-dependency-plugin'
+// import CircularDependencyPlugin from 'circular-dependency-plugin'
 import { DuplicatesPlugin } from 'inspectpack/plugin'
 import type { NextConfig } from 'next'
-import { DomainLocale } from 'next/dist/server/config'
-import { DefinePlugin, Configuration } from 'webpack'
+import type { DomainLocale } from 'next/dist/server/config'
+import type { Configuration } from 'webpack'
+import { DefinePlugin } from 'webpack'
 import { loadConfig } from './config/loadConfig'
 import { configToImportMeta } from './config/utils/configToImportMeta'
-import { GraphCommerceConfig } from './generated/config'
+import type { GraphCommerceConfig } from './generated/config'
 import { InterceptorPlugin } from './interceptors/InterceptorPlugin'
 import { resolveDependenciesSync } from './utils/resolveDependenciesSync'
 
@@ -40,7 +41,7 @@ function domains(config: GraphCommerceConfig): DomainLocale[] {
  * module.exports = withGraphCommerce(nextConfig)
  * ```
  */
-export function withGraphCommerce(nextConfig: NextConfig, cwd: string): NextConfig {
+export function withGraphCommerce(nextConfig: NextConfig, cwd: string = process.cwd()): NextConfig {
   graphcommerceConfig ??= loadConfig(cwd)
   const importMetaPaths = configToImportMeta(graphcommerceConfig)
 
@@ -53,10 +54,10 @@ export function withGraphCommerce(nextConfig: NextConfig, cwd: string): NextConf
 
   return {
     ...nextConfig,
+    bundlePagesRouterDependencies: true,
     experimental: {
       ...nextConfig.experimental,
       scrollRestoration: true,
-      bundlePagesExternals: true,
       swcPlugins: [...(nextConfig.experimental?.swcPlugins ?? []), ['@lingui/swc-plugin', {}]],
     },
     i18n: {
@@ -70,7 +71,8 @@ export function withGraphCommerce(nextConfig: NextConfig, cwd: string): NextConf
       ...nextConfig.images,
       remotePatterns: [
         { hostname: new URL(graphcommerceConfig.magentoEndpoint).hostname },
-        { hostname: 'media.graphassets.com' },
+        { hostname: '**.graphassets.com' },
+        { hostname: '*.graphcommerce.org' },
         ...(nextConfig.images?.remotePatterns ?? []),
       ],
     },
@@ -112,8 +114,19 @@ export function withGraphCommerce(nextConfig: NextConfig, cwd: string): NextConf
     },
     transpilePackages,
     webpack: (config: Configuration, options) => {
-      // Allow importing yml/yaml files for graphql-mesh
-      config.module?.rules?.push({ test: /\.ya?ml$/, use: 'js-yaml-loader' })
+      if (!config.module) config.module = { rules: [] }
+
+      config.module = {
+        ...config.module,
+        rules: [
+          ...(config.module.rules ?? []),
+          // Allow importing yml/yaml files for graphql-mesh
+          { test: /\.ya?ml$/, use: 'js-yaml-loader' },
+          // @lingui .po file support
+          { test: /\.po/, use: '@lingui/loader' },
+        ],
+        exprContextCritical: false,
+      }
 
       if (!config.plugins) config.plugins = []
 
@@ -124,13 +137,13 @@ export function withGraphCommerce(nextConfig: NextConfig, cwd: string): NextConf
       config.plugins.push(new DefinePlugin({ 'globalThis.__DEV__': options.dev }))
 
       if (!options.isServer) {
-        if (graphcommerceConfig.debug?.webpackCircularDependencyPlugin) {
-          config.plugins.push(
-            new CircularDependencyPlugin({
-              exclude: /readable-stream|duplexer2|node_modules\/next/,
-            }),
-          )
-        }
+        // if (graphcommerceConfig.debug?.webpackCircularDependencyPlugin) {
+        //   config.plugins.push(
+        //     new CircularDependencyPlugin({
+        //       exclude: /readable-stream|duplexer2|node_modules\/next/,
+        //     }),
+        //   )
+        // }
         if (graphcommerceConfig.debug?.webpackDuplicatesPlugin) {
           config.plugins.push(
             new DuplicatesPlugin({
@@ -147,9 +160,6 @@ export function withGraphCommerce(nextConfig: NextConfig, cwd: string): NextConf
           )
         }
       }
-
-      // @lingui .po file support
-      config.module?.rules?.push({ test: /\.po/, use: '@lingui/loader' })
 
       config.snapshot = {
         ...(config.snapshot ?? {}),

@@ -1,24 +1,25 @@
 import { Trans } from '@lingui/react'
-import { Alert, SxProps, Theme } from '@mui/material'
+import type { SxProps, Theme } from '@mui/material'
+import { Alert } from '@mui/material'
 import React from 'react'
 import { isFragment } from 'react-is'
 import { Button } from '../Button'
 import { IconSvg } from '../IconSvg'
 import { extendableComponent } from '../Styles'
 import { iconChevronDown } from '../icons'
-import { ActionCardProps } from './ActionCard'
+import type { ActionCardProps } from './ActionCard'
 import { ActionCardLayout } from './ActionCardLayout'
 
 type MultiSelect = {
   multiple: true
   collapse?: false
-  value: (string | number | null)[]
+  value: (string | boolean | number | null)[]
 
   onChange?: (event: React.MouseEvent<HTMLElement>, value: MultiSelect['value']) => void
 }
 type Select = {
   multiple?: boolean
-  value: string | number | null
+  value: string | boolean | number | null
   collapse?: boolean
 
   /** Value is null when deselected when not required */
@@ -44,11 +45,12 @@ function isValueSelected(
   candidate?: Select['value'] | MultiSelect['value'],
 ) {
   if (candidate === undefined) return false
+  if (typeof value === 'boolean') return value
   if (Array.isArray(candidate)) return candidate.indexOf(value) >= 0
   return value === candidate
 }
 
-type HoistedActionCardProps = Pick<ActionCardProps, 'color' | 'variant' | 'size' | 'layout'>
+export type HoistedActionCardProps = Pick<ActionCardProps, 'color' | 'variant' | 'size' | 'layout'>
 
 const parts = ['root'] as const
 const name = 'ActionCardList'
@@ -56,6 +58,8 @@ const { withState } = extendableComponent<HoistedActionCardProps, typeof name, t
   name,
   parts,
 )
+
+const isNotFrag = <T extends React.ReactElement>(el: T): el is T => !isFragment(el)
 
 export const ActionCardList = React.forwardRef<HTMLDivElement, ActionCardListProps>(
   (props, ref) => {
@@ -97,7 +101,7 @@ export const ActionCardList = React.forwardRef<HTMLDivElement, ActionCardListPro
         }
 
     type ActionCardLike = React.ReactElement<
-      Pick<ActionCardProps, 'value' | 'selected' | 'disabled' | 'onClick' | 'error' | 'onClick'> &
+      Pick<ActionCardProps, 'value' | 'selected' | 'disabled' | 'onClick' | 'error'> &
         HoistedActionCardProps
     >
 
@@ -105,7 +109,7 @@ export const ActionCardList = React.forwardRef<HTMLDivElement, ActionCardListPro
       const hasValue = (el as ActionCardLike).props.value
 
       if (process.env.NODE_ENV !== 'production') {
-        if (hasValue === undefined) console.error(el, `must be an instance of ActionCard`)
+        if (hasValue === undefined) console.error(el, 'must be an instance of ActionCard')
       }
       return (el as ActionCardLike).props.value !== undefined
     }
@@ -115,17 +119,15 @@ export const ActionCardList = React.forwardRef<HTMLDivElement, ActionCardListPro
       .filter(React.isValidElement)
       .filter(isActionCardLike)
       .filter((child) => {
+        const notFrag = isNotFrag(child)
         if (process.env.NODE_ENV !== 'production') {
-          if (isFragment(child))
+          if (!notFrag)
             console.error(
-              [
-                "@graphcommerce/next-ui: The ActionCardList component doesn't accept a Fragment as a child.",
-                'Consider providing an array instead',
-              ].join('\n'),
+              "@graphcommerce/next-ui: The ActionCardList component doesn't accept a Fragment as a child. Consider providing an array instead",
             )
         }
 
-        return !isFragment(child)
+        return notFrag
       })
 
     // Make sure the selected values is in the list of all possible values
@@ -137,8 +139,8 @@ export const ActionCardList = React.forwardRef<HTMLDivElement, ActionCardListPro
     const classes = withState({ size, color, variant, layout })
 
     return (
-      <div ref={ref}>
-        <ActionCardLayout sx={sx} className={classes.root} layout={layout}>
+      <div>
+        <ActionCardLayout sx={sx} className={classes.root} layout={layout} ref={ref} tabIndex={0}>
           {childActionCards.map((child, index) => {
             if (collapse && Boolean(value) && !isValueSelected(child.props.value, value))
               return null

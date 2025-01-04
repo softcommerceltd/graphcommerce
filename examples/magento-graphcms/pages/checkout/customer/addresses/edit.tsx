@@ -1,9 +1,11 @@
 import { PageOptions } from '@graphcommerce/framer-next-pages'
+import { getCartDisabled } from '@graphcommerce/magento-cart'
 import {
   ApolloCustomerErrorFullPage,
   EditAddressForm,
   useCustomerQuery,
   AccountDashboardAddressesDocument,
+  getCustomerAccountIsDisabled,
 } from '@graphcommerce/magento-customer'
 import { PageMeta, StoreConfigDocument } from '@graphcommerce/magento-store'
 import {
@@ -74,7 +76,7 @@ function CheckoutCustomerAddressesEdit() {
             </div>
           )}
 
-          {address && !loading && <EditAddressForm onCompleteRoute='/checkout' address={address} />}
+          {address && !loading && <EditAddressForm address={address} />}
         </SectionContainer>
       </Container>
     </>
@@ -89,16 +91,17 @@ CheckoutCustomerAddressesEdit.pageOptions = pageOptions
 
 export default CheckoutCustomerAddressesEdit
 
-export const getStaticProps: GetPageStaticProps = async ({ locale }) => {
-  const client = graphqlSharedClient(locale)
+export const getStaticProps: GetPageStaticProps = async (context) => {
+  if (getCartDisabled(context.locale) || getCustomerAccountIsDisabled(context.locale))
+    return { notFound: true }
+  const client = graphqlSharedClient(context)
   const conf = client.query({ query: StoreConfigDocument })
 
   return {
     props: {
       apolloState: await conf.then(() => client.cache.extract()),
       variantMd: 'bottom',
-      size: 'max',
-      up: { href: '/checkout', title: i18n._(/* i18n */ 'Checkout') },
+      up: { href: '/checkout', title: i18n._(/* i18n */ 'Shipping') },
     },
   }
 }

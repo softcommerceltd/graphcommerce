@@ -1,8 +1,8 @@
-import { ApolloClient } from '@graphcommerce/graphql'
-import { AddProductsToCartFormProps } from '@graphcommerce/magento-product'
+import type { ApolloClient } from '@graphcommerce/graphql'
+import type { AddProductsToCartFormProps } from '@graphcommerce/magento-product'
 import { filterNonNullableKeys, findByTypename, nonNullable } from '@graphcommerce/next-ui'
 import { GetConfigurableOptionsSelectionDocument } from '../graphql'
-import { DefaultConfigurableOptionsSelectionFragment } from './DefaultConfigurableOptionsSelection.gql'
+import type { DefaultConfigurableOptionsSelectionFragment } from './DefaultConfigurableOptionsSelection.gql'
 
 type BaseQuery =
   | { products?: DefaultConfigurableOptionsSelectionFragment | null | undefined }
@@ -27,17 +27,19 @@ export function defaultConfigurableOptionsSelection<Q extends BaseQuery = BaseQu
   client: ApolloClient<object>,
   query: Q,
 ): Q & Pick<AddProductsToCartFormProps, 'defaultValues'> {
-  if (!import.meta.graphCommerce.configurableVariantForSimple) {
+  const simple = query?.products?.items?.find((p) => p?.url_key === urlKey)
+  const configurable = findByTypename(query?.products?.items, 'ConfigurableProduct')
+
+  if (
+    simple?.__typename === 'SimpleProduct' &&
+    !import.meta.graphCommerce.configurableVariantForSimple
+  ) {
     const product = query?.products?.items?.find((p) => p?.url_key === urlKey)
     return { ...query, products: { ...query?.products, items: [product] }, defaultValues: {} }
   }
 
-  const simple = query?.products?.items?.find((p) => p?.url_key === urlKey)
-  const configurable = findByTypename(query?.products?.items, 'ConfigurableProduct')
-
   // Check if the requested product actually is a simple product
-  if (!simple || simple?.__typename !== 'SimpleProduct' || !configurable?.url_key)
-    return { ...query, defaultValues: {} }
+  if (!configurable?.url_key) return { ...query, defaultValues: {} }
 
   // Find the requested simple product on the configurable variants and get the attributes.
   const attributes = configurable?.variants?.find(
@@ -45,8 +47,6 @@ export function defaultConfigurableOptionsSelection<Q extends BaseQuery = BaseQu
   )?.attributes
 
   const selectedOptions = (attributes ?? []).filter(nonNullable).map((a) => a.uid)
-  if (!selectedOptions.length)
-    return { ...query, products: { ...query?.products, items: [simple] }, defaultValues: {} }
 
   /**
    * We're using writeQuery to the Apollo Client cache, to to avoid a second request to the GraphQL
@@ -65,7 +65,6 @@ export function defaultConfigurableOptionsSelection<Q extends BaseQuery = BaseQu
    * })
    * ```
    */
-
   const optionsAvailableForSelection =
     configurable.configurable_product_options_selection?.options_available_for_selection?.filter(
       nonNullable,
@@ -104,8 +103,8 @@ export function defaultConfigurableOptionsSelection<Q extends BaseQuery = BaseQu
                   option_value_uids,
                 }),
               ),
-              media_gallery: simple.media_gallery,
-              variant: simple,
+              media_gallery: simple?.media_gallery ?? configurable.media_gallery,
+              variant: simple?.__typename === 'SimpleProduct' ? simple : null,
             },
           },
         ],

@@ -4,6 +4,7 @@ import {
   useCustomerQuery,
   WaitForCustomer,
   AccountDashboardAddressesDocument,
+  getCustomerAccountIsDisabled,
 } from '@graphcommerce/magento-customer'
 import { CountryRegionsDocument, PageMeta, StoreConfigDocument } from '@graphcommerce/magento-store'
 import {
@@ -59,9 +60,11 @@ AccountAddressesPage.pageOptions = pageOptions
 
 export default AccountAddressesPage
 
-export const getStaticProps: GetPageStaticProps = async ({ locale }) => {
-  const client = graphqlSharedClient(locale)
-  const staticClient = graphqlSsrClient(locale)
+export const getStaticProps: GetPageStaticProps = async (context) => {
+  if (getCustomerAccountIsDisabled(context.locale)) return { notFound: true }
+
+  const client = graphqlSharedClient(context)
+  const staticClient = graphqlSsrClient(context)
   const conf = client.query({ query: StoreConfigDocument })
 
   const countryRegions = staticClient.query({

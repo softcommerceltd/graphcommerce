@@ -1,34 +1,29 @@
+import type { ActionCardItemBase, ActionCardItemRenderProps } from '@graphcommerce/ecommerce-ui'
+import { ActionCardListForm } from '@graphcommerce/ecommerce-ui'
 import {
   ApolloCartErrorAlert,
   useCartQuery,
   useFormGqlMutationCart,
 } from '@graphcommerce/magento-cart'
-import {
-  Form,
-  FormHeader,
-  ActionCardItemBase,
-  ActionCardItemRenderProps,
-  ActionCardListForm,
-} from '@graphcommerce/next-ui'
+import { Form, FormHeader } from '@graphcommerce/next-ui'
+import type { UseFormComposeOptions, UseFormGraphQlOptions } from '@graphcommerce/react-hook-form'
 import {
   FormAutoSubmit,
   FormProvider,
   useFormCompose,
-  UseFormComposeOptions,
-  UseFormGraphQlOptions,
   useWatch,
 } from '@graphcommerce/react-hook-form'
 import { i18n } from '@lingui/core'
 import { Trans } from '@lingui/react'
-import { SxProps, Theme } from '@mui/material'
-import { useMemo } from 'react'
+import type { SxProps, Theme } from '@mui/material'
+import { useEffect, useMemo } from 'react'
 import { GetShippingMethodsDocument } from './GetShippingMethods.gql'
 import { ShippingMethodActionCard } from './ShippingMethodActionCard'
-import {
-  ShippingMethodFormDocument,
+import type {
   ShippingMethodFormMutation,
   ShippingMethodFormMutationVariables,
 } from './ShippingMethodForm.gql'
+import { ShippingMethodFormDocument } from './ShippingMethodForm.gql'
 
 export type ShippingMethodFormProps = Pick<UseFormComposeOptions, 'step'> & {
   sx?: SxProps<Theme>
@@ -45,10 +40,9 @@ function notEmpty<TValue>(value: TValue | null | undefined): value is TValue {
 export function ShippingMethodForm(props: ShippingMethodFormProps) {
   const { step, sx, children, onBeforeSubmit = (vars) => vars, ...options } = props
   const { data: cartQuery } = useCartQuery(GetShippingMethodsDocument)
-  const availableMethods = (
-    cartQuery?.cart?.shipping_addresses?.[0]?.available_shipping_methods ?? []
-  ).filter(notEmpty)
-  const selectedMethod = cartQuery?.cart?.shipping_addresses?.[0]?.selected_shipping_method
+
+  const shippingAddress = cartQuery?.cart?.shipping_addresses?.[0]
+  const availableMethods = (shippingAddress?.available_shipping_methods ?? []).filter(notEmpty)
 
   const items = useMemo(
     () =>
@@ -63,23 +57,22 @@ export function ShippingMethodForm(props: ShippingMethodFormProps) {
           ...method,
           disabled: !method?.available,
           value: `${method?.carrier_code}-${method?.method_code ?? ''}`,
+          method_title: method?.method_title || '',
         })),
     [availableMethods],
   )
 
-  // The default: When there is only a single shipping method, select that one.
-  let carrierMethod: string | undefined = items.length === 1 ? items[0]?.value : undefined
-
   // Override with the currently selected method if there is one.
-  if (selectedMethod?.method_code)
-    carrierMethod = `${selectedMethod.carrier_code}-${selectedMethod.method_code}`
+  const selectedMethod = cartQuery?.cart?.shipping_addresses?.[0]?.selected_shipping_method
+  const carrierMethod = selectedMethod?.method_code
+    ? `${selectedMethod.carrier_code}-${selectedMethod.method_code}`
+    : undefined
 
   const form = useFormGqlMutationCart<
     ShippingMethodFormMutation,
     ShippingMethodFormMutationVariables & { carrierMethod?: string }
   >(ShippingMethodFormDocument, {
     defaultValues: { carrierMethod },
-    experimental_useV2: true,
     onBeforeSubmit: (variables) => {
       const [carrier, method] = (variables.carrierMethod ?? '').split('-')
       return onBeforeSubmit({ ...variables, carrier, method })
@@ -87,13 +80,14 @@ export function ShippingMethodForm(props: ShippingMethodFormProps) {
     ...options,
   })
 
-  const { handleSubmit, control, error } = form
+  const { handleSubmit, control, error, setValue } = form
   const submit = handleSubmit(() => {})
 
   useFormCompose({ form, step, submit, key: 'ShippingMethodForm' })
 
-  if (items.length === 0) {
-    items.push({
+  const renderItems = [...items]
+  if (renderItems.length === 0) {
+    renderItems.push({
       disabled: true,
       value: '',
       available: false,
@@ -106,6 +100,18 @@ export function ShippingMethodForm(props: ShippingMethodFormProps) {
       price_excl_tax: {},
     })
   }
+
+  const firstCarrierMethod = items.length === 1 ? items[0].value : undefined
+  useEffect(() => {
+    //  If there is a shipping address AND there is only one shipping method
+    if (shippingAddress && firstCarrierMethod) {
+      // AND the current carrierMethod is not the same (or not set) as the single shipping method
+      if (carrierMethod !== firstCarrierMethod) {
+        // THEN set the shipping method to the only one available.
+        setValue('carrierMethod', firstCarrierMethod, { shouldValidate: true })
+      }
+    }
+  }, [shippingAddress, firstCarrierMethod, carrierMethod, setValue])
 
   return (
     <FormProvider {...form}>
@@ -127,7 +133,7 @@ export function ShippingMethodForm(props: ShippingMethodFormProps) {
           size='large'
           color='secondary'
           rules={{ required: i18n._(/* i18n */ 'Please select a shipping method') }}
-          items={items}
+          items={renderItems}
           render={
             ShippingMethodActionCard as React.FC<ActionCardItemRenderProps<ActionCardItemBase>>
           }
@@ -139,6 +145,7 @@ export function ShippingMethodForm(props: ShippingMethodFormProps) {
   )
 }
 
+/** @public */
 export function useShippingMethod() {
   return useWatch<{ carrierMethod?: string }>({ name: 'carrierMethod' })
 }

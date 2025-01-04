@@ -1,22 +1,20 @@
-import { PasswordRepeatElement, TextFieldElement } from '@graphcommerce/ecommerce-ui'
+import { EmailElement, PasswordRepeatElement } from '@graphcommerce/ecommerce-ui'
 import { Button, Form, FormActions, FormRow } from '@graphcommerce/next-ui'
 import { useFormGqlMutation } from '@graphcommerce/react-hook-form'
 import { Trans } from '@lingui/react'
 import { useRouter } from 'next/router'
 import { ApolloCustomerErrorAlert } from '../ApolloCustomerError/ApolloCustomerErrorAlert'
 import { ValidatedPasswordElement } from '../ValidatedPasswordElement/ValidatedPasswordElement'
-import {
-  ResetPasswordDocument,
-  ResetPasswordMutation,
-  ResetPasswordMutationVariables,
-} from './ResetPassword.gql'
+import type { ResetPasswordMutation, ResetPasswordMutationVariables } from './ResetPassword.gql'
+import { ResetPasswordDocument } from './ResetPassword.gql'
 
-type ResetPasswordFormProps = {
+export type ResetPasswordFormProps = {
   token: string
+  buttonProps?: React.ComponentProps<typeof Button>
 }
 
 export function ResetPasswordForm(props: ResetPasswordFormProps) {
-  const { token } = props
+  const { token, buttonProps } = props
 
   const form = useFormGqlMutation<
     ResetPasswordMutation,
@@ -44,12 +42,10 @@ export function ResetPasswordForm(props: ResetPasswordFormProps) {
   return (
     <Form onSubmit={submitHandler} noValidate>
       <FormRow>
-        <TextFieldElement
+        <EmailElement
           control={control}
           name='email'
           variant='outlined'
-          type='email'
-          label={<Trans id='Email' />}
           required
           disabled={formState.isSubmitting}
         />
@@ -85,6 +81,7 @@ export function ResetPasswordForm(props: ResetPasswordFormProps) {
           color='primary'
           variant='pill'
           size='large'
+          {...buttonProps}
         >
           <Trans id='Save new password' />
         </Button>

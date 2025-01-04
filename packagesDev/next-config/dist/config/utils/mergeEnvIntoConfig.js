@@ -3,7 +3,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.formatAppliedEnv = exports.mergeEnvIntoConfig = exports.filterEnv = exports.configToEnvSchema = exports.dotNotation = exports.toEnvStr = void 0;
+exports.toEnvStr = void 0;
+exports.configToEnvSchema = configToEnvSchema;
+exports.mergeEnvIntoConfig = mergeEnvIntoConfig;
+exports.formatAppliedEnv = formatAppliedEnv;
 /* eslint-disable import/no-extraneous-dependencies */
 const utilities_1 = require("@apollo/client/utilities");
 const chalk_1 = __importDefault(require("chalk"));
@@ -20,7 +23,6 @@ const dotNotation = (pathParts) => pathParts
     return !Number.isNaN(idx) ? `[${idx}]` : v;
 })
     .join('.');
-exports.dotNotation = dotNotation;
 function isJSON(str) {
     if (!str)
         return true;
@@ -43,14 +45,16 @@ function configToEnvSchema(schema) {
             node = node.unwrap();
         if (node instanceof zod_1.ZodNullable)
             node = node.unwrap();
+        if (node instanceof zod_1.ZodDefault)
+            node = node.removeDefault();
         if (node instanceof zod_1.ZodObject) {
             if (path.length > 0) {
                 envSchema[(0, exports.toEnvStr)(path)] = zod_1.z
                     .string()
                     .optional()
-                    .refine(isJSON, { message: `Invalid JSON` })
+                    .refine(isJSON, { message: 'Invalid JSON' })
                     .transform((val) => (val ? JSON.parse(val) : val));
-                envToDot[(0, exports.toEnvStr)(path)] = (0, exports.dotNotation)(path);
+                envToDot[(0, exports.toEnvStr)(path)] = dotNotation(path);
             }
             const typeNode = node;
             Object.keys(typeNode.shape).forEach((key) => {
@@ -64,18 +68,23 @@ function configToEnvSchema(schema) {
                 envSchema[(0, exports.toEnvStr)(path)] = zod_1.z
                     .string()
                     .optional()
-                    .refine(isJSON, { message: `Invalid JSON` })
+                    .refine(isJSON, { message: 'Invalid JSON' })
                     .transform((val) => (val ? JSON.parse(val) : val));
-                envToDot[(0, exports.toEnvStr)(path)] = (0, exports.dotNotation)(path);
+                envToDot[(0, exports.toEnvStr)(path)] = dotNotation(path);
             }
             arr.forEach((key) => {
                 walk(node.element, [...path, String(key)]);
             });
             return;
         }
-        if (node instanceof zod_1.ZodString || node instanceof zod_1.ZodNumber || node instanceof zod_1.ZodEnum) {
+        if (node instanceof zod_1.ZodNumber) {
+            envSchema[(0, exports.toEnvStr)(path)] = zod_1.z.coerce.number().optional();
+            envToDot[(0, exports.toEnvStr)(path)] = dotNotation(path);
+            return;
+        }
+        if (node instanceof zod_1.ZodString || node instanceof zod_1.ZodEnum) {
             envSchema[(0, exports.toEnvStr)(path)] = node.optional();
-            envToDot[(0, exports.toEnvStr)(path)] = (0, exports.dotNotation)(path);
+            envToDot[(0, exports.toEnvStr)(path)] = dotNotation(path);
             return;
         }
         if (node instanceof zod_1.ZodBoolean) {
@@ -89,7 +98,7 @@ function configToEnvSchema(schema) {
                     return false;
                 return v;
             });
-            envToDot[(0, exports.toEnvStr)(path)] = (0, exports.dotNotation)(path);
+            envToDot[(0, exports.toEnvStr)(path)] = dotNotation(path);
             return;
         }
         throw Error(`[@graphcommerce/next-config] Unknown type in schema ${node.constructor.name}. This is probably a bug please create an issue.`);
@@ -97,11 +106,9 @@ function configToEnvSchema(schema) {
     walk(schema);
     return [zod_1.z.object(envSchema), envToDot];
 }
-exports.configToEnvSchema = configToEnvSchema;
 const filterEnv = (env) => Object.fromEntries(Object.entries(env).filter(([key]) => key.startsWith('GC_')));
-exports.filterEnv = filterEnv;
 function mergeEnvIntoConfig(schema, config, env) {
-    const filteredEnv = (0, exports.filterEnv)(env);
+    const filteredEnv = filterEnv(env);
     const newConfig = (0, utilities_1.cloneDeep)(config);
     const [envSchema, envToDot] = configToEnvSchema(schema);
     const result = envSchema.safeParse(filteredEnv);
@@ -130,7 +137,6 @@ function mergeEnvIntoConfig(schema, config, env) {
     });
     return [newConfig, applyResult];
 }
-exports.mergeEnvIntoConfig = mergeEnvIntoConfig;
 /**
  * Prints the applied env variables to the console
  *
@@ -147,7 +153,7 @@ function formatAppliedEnv(applyResult) {
     const lines = applyResult.map(({ from, to, envValue, envVar, dotVar, error, warning }) => {
         const fromFmt = chalk_1.default.red(JSON.stringify(from));
         const toFmt = chalk_1.default.green(JSON.stringify(to));
-        const envVariableFmt = `${envVar}='${envValue}'`;
+        const envVariableFmt = `${envVar}`;
         const dotVariableFmt = chalk_1.default.bold.underline(`${dotVar}`);
         const baseLog = `${envVariableFmt} => ${dotVariableFmt}`;
         if (error) {
@@ -161,19 +167,18 @@ function formatAppliedEnv(applyResult) {
         if (!dotVar)
             return chalk_1.default.red(`${envVariableFmt} => ignored (no matching config)`);
         if (from === undefined && to === undefined)
-            return ` = ${baseLog}: (ignored, no change/wrong format)`;
+            return ` = ${baseLog}: (ignored)`;
         if (from === undefined && to !== undefined)
-            return ` ${chalk_1.default.green('+')} ${baseLog}: ${toFmt}`;
+            return ` ${chalk_1.default.green('+')} ${baseLog}`;
         if (from !== undefined && to === undefined)
-            return ` ${chalk_1.default.red('-')} ${baseLog}: ${fromFmt}`;
-        return ` ${chalk_1.default.yellowBright('~')} ${baseLog}: ${fromFmt} => ${toFmt}`;
+            return ` ${chalk_1.default.red('-')} ${baseLog}`;
+        return ` ${chalk_1.default.yellowBright('~')} ${baseLog}`;
     });
-    let header = chalk_1.default.blueBright(`info`);
+    let header = chalk_1.default.blueBright('info');
     if (hasWarning)
-        header = chalk_1.default.yellowBright(`warning`);
+        header = chalk_1.default.yellowBright('warning');
     if (hasError)
-        header = chalk_1.default.yellowBright(`error`);
-    header += `   - Loaded GraphCommerce env variables`;
+        header = chalk_1.default.yellowBright('error');
+    header += '   - Loaded GraphCommerce env variables';
     return [header, ...lines].join('\n');
 }
-exports.formatAppliedEnv = formatAppliedEnv;

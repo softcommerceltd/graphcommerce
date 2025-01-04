@@ -1,20 +1,20 @@
-import {
-  FullPageMessage,
-  IconSvg,
-  iconShoppingBag,
-  FullPageMessageProps,
-} from '@graphcommerce/next-ui'
+import type { FullPageMessageProps } from '@graphcommerce/next-ui'
+import { FullPageMessage, IconSvg, iconShoppingBag } from '@graphcommerce/next-ui'
 import { Trans } from '@lingui/react'
+import type { SxProps, Theme } from '@mui/material'
 import { Button } from '@mui/material'
 import React from 'react'
 
-type EmptyCartProps = { children?: React.ReactNode } & Pick<FullPageMessageProps, 'button'>
+export type EmptyCartProps = {
+  children?: React.ReactNode
+  sx?: SxProps<Theme>
+} & Pick<FullPageMessageProps, 'button' | 'disableMargin'>
+
 export function EmptyCart(props: EmptyCartProps) {
-  const { children, button } = props
+  const { children, button, ...rest } = props
 
   return (
     <FullPageMessage
-      sx={(theme) => ({ mt: { md: theme.spacings.md } })}
       title={<Trans id='Your cart is empty' />}
       icon={<IconSvg src={iconShoppingBag} size='xxl' />}
       button={
@@ -24,6 +24,7 @@ export function EmptyCart(props: EmptyCartProps) {
           </Button>
         )
       }
+      {...rest}
     >
       {children ?? <Trans id='Discover our collection and add items to your cart!' />}
     </FullPageMessage>

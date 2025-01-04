@@ -1,7 +1,8 @@
 import { Money } from '@graphcommerce/magento-store'
-import { extendableComponent, breakpointVal } from '@graphcommerce/next-ui'
+import { breakpointVal, extendableComponent } from '@graphcommerce/next-ui'
 import { Trans } from '@lingui/react'
-import { Box, Divider, lighten, SxProps, Theme } from '@mui/material'
+import type { SxProps, Theme } from '@mui/material'
+import { Box, Divider, lighten } from '@mui/material'
 import { useCartQuery, useDisplayInclTax } from '../../hooks'
 import { GetCartTotalsDocument } from './GetCartTotals.gql'
 
@@ -12,7 +13,7 @@ export type CartTotalsProps = OwnerProps & {
 }
 
 type OwnerProps = { containerMargin?: boolean }
-const name = 'CartTotals' as const
+const name = 'CartTotals'
 const parts = [
   'root',
   'costsDivider',
@@ -42,12 +43,15 @@ export function CartTotals(props: CartTotalsProps) {
   const { shipping_addresses, prices } = data.cart
   const shippingMethod = shipping_addresses?.[0]?.selected_shipping_method
 
-  const shippingMethodPrices = shipping_addresses?.[0]?.available_shipping_methods?.find(
-    (avail) =>
-      (shippingMethod?.amount?.value ?? 0) > 0 &&
-      avail?.carrier_code === shippingMethod?.carrier_code &&
-      avail?.method_code === shippingMethod?.method_code,
-  )
+  const shippingMethodPrices =
+    import.meta.graphCommerce.magentoVersion >= 246
+      ? shippingMethod
+      : shipping_addresses?.[0]?.available_shipping_methods?.find(
+          (avail) =>
+            (shippingMethod?.amount?.value ?? 0) > 0 &&
+            avail?.carrier_code === shippingMethod?.carrier_code &&
+            avail?.method_code === shippingMethod?.method_code,
+        )
 
   return (
     <Box
@@ -153,7 +157,7 @@ export function CartTotals(props: CartTotalsProps) {
       {additionalSubtotals}
 
       <Box key='divider'>
-        <Divider className={classes.costsDivider} sx={{ margin: `1em 0` }} />
+        <Divider className={classes.costsDivider} sx={{ margin: '1em 0' }} />
       </Box>
 
       {prices?.grand_total && (

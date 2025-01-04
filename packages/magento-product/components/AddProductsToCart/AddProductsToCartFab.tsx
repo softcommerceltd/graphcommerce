@@ -1,10 +1,10 @@
-import { Fab, FabProps, iconShoppingBag, iconCheckmark } from '@graphcommerce/next-ui'
-import { i18n } from '@lingui/core'
-import { SxProps, Theme } from '@mui/material'
-import {
-  useAddProductsToCartAction,
-  UseAddProductsToCartActionProps,
-} from './useAddProductsToCartAction'
+import { useCartEnabled } from '@graphcommerce/magento-cart'
+import type { FabProps } from '@graphcommerce/next-ui'
+import { Fab, iconCheckmark, iconShoppingBag } from '@graphcommerce/next-ui'
+import { t } from '@lingui/macro'
+import type { SxProps, Theme } from '@mui/material'
+import type { UseAddProductsToCartActionProps } from './useAddProductsToCartAction'
+import { useAddProductsToCartAction } from './useAddProductsToCartAction'
 
 export type AddProductsToCartFabProps = {
   sx?: SxProps<Theme>
@@ -16,13 +16,17 @@ export function AddProductsToCartFab(props: AddProductsToCartFabProps) {
   const { icon = iconShoppingBag, product, sku, ...rest } = props
   const { showSuccess, ...action } = useAddProductsToCartAction(props)
 
+  const cartEnabled = useCartEnabled()
+
+  if (!cartEnabled) return null
+
   return (
     <Fab
       type='submit'
       {...rest}
       {...action}
       icon={showSuccess && !action.loading ? iconCheckmark : icon}
-      aria-label={i18n._(/* i18n*/ `Add to Cart`)}
+      aria-label={t`Add to Cart`}
     />
   )
 }

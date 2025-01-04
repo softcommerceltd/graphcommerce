@@ -1,13 +1,14 @@
-import { FilterRangeTypeInput } from '@graphcommerce/graphql-mesh'
+import type { FilterRangeTypeInput } from '@graphcommerce/graphql-mesh'
 import { Money } from '@graphcommerce/magento-store'
 import { extendableComponent, filterNonNullableKeys } from '@graphcommerce/next-ui'
-// eslint-disable-next-line @typescript-eslint/no-restricted-imports
-import { Box, Slider, SxProps, Theme, useEventCallback } from '@mui/material'
+import type { SxProps, Theme } from '@mui/material'
+import { Box, Slider, useEventCallback } from '@mui/material'
 import { useCallback } from 'react'
-import { FilterProps } from './ProductFiltersProAggregations'
+import type { FilterProps } from './ProductFiltersProAggregations'
 
 export type PriceSliderProps = {
   value: FilterRangeTypeInput | null | undefined
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onChange: (...event: any[]) => void
   sx?: SxProps<Theme>
   options: FilterProps['aggregation']['options']

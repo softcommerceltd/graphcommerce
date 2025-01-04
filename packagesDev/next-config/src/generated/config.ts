@@ -16,9 +16,24 @@ export type Scalars = {
   Float: { input: number; output: number; }
 };
 
+export type CartPermissions =
+  | 'CUSTOMER_ONLY'
+  | 'DISABLED'
+  | 'ENABLED';
+
 export type CompareVariant =
   | 'CHECKBOX'
   | 'ICON';
+
+/** Configure whether the layout should be full width or should be constrained by a max breakpoint. Configurable in theme.ts */
+export type ContainerSizing =
+  | 'BREAKPOINT'
+  | 'FULL_WIDTH';
+
+export type CustomerAccountPermissions =
+  | 'DISABLED'
+  | 'DISABLE_REGISTRATION'
+  | 'ENABLED';
 
 /** GoogleDatalayerConfig to allow enabling certain aspects of the datalayer */
 export type DatalayerConfig = {
@@ -104,6 +119,8 @@ export type DatalayerConfig = {
  * Below is a list of all possible configurations that can be set by GraphCommerce.
  */
 export type GraphCommerceConfig = {
+  /** Configuration for the SidebarGallery component */
+  breadcrumbs?: InputMaybe<Scalars['Boolean']['input']>;
   /**
    * The canonical base URL is used for SEO purposes.
    *
@@ -145,6 +162,10 @@ export type GraphCommerceConfig = {
    * Enabling options here will allow switching of those variants.
    */
   configurableVariantValues?: InputMaybe<MagentoConfigurableVariantValues>;
+  /** Configures the max width of the content (main content area) */
+  containerSizingContent?: InputMaybe<ContainerSizing>;
+  /** Configures the max width of the shell (header, footer, overlays, etc.) */
+  containerSizingShell?: InputMaybe<ContainerSizing>;
   /**
    * Determines if cross sell items should be shown when the user already has the product in their cart. This will result in a product will popping off the screen when you add it to the cart.
    *
@@ -157,14 +178,23 @@ export type GraphCommerceConfig = {
    * Default: 'false'
    */
   crossSellsRedirectItems?: InputMaybe<Scalars['Boolean']['input']>;
+  /** Enables the shipping notes field in the checkout */
+  customerAddressNoteEnable?: InputMaybe<Scalars['Boolean']['input']>;
   /**
-   * Due to a limitation in the GraphQL API of Magento 2, we need to know if the
-   * customer requires email confirmation.
-   *
-   * This value should match Magento 2's configuration value for
-   * `customer/create_account/confirm` and should be removed once we can query
+   * Enables company fields inside the checkout:
+   * - Company name
+   * - VAT ID
    */
-  customerRequireEmailConfirmation?: InputMaybe<Scalars['Boolean']['input']>;
+  customerCompanyFieldsEnable?: InputMaybe<Scalars['Boolean']['input']>;
+  /** Enable customer account deletion through the account section */
+  customerDeleteEnabled?: InputMaybe<Scalars['Boolean']['input']>;
+  /**
+   * X-Magento-Cache-Id allows Varnish to cache requests that are made in the browser while users are logged in. For example the products query can now be cached for logged in users.
+   *
+   * This can be disabled when Varnish is running out of available memory.
+   */
+  customerXMagentoCacheIdDisable?: InputMaybe<Scalars['Boolean']['input']>;
+  /** Datalayer config */
   dataLayer?: InputMaybe<DatalayerConfig>;
   /** Debug configuration for GraphCommerce */
   debug?: InputMaybe<GraphCommerceDebugConfig>;
@@ -194,6 +224,8 @@ export type GraphCommerceConfig = {
    * To override the value for a specific locale, configure in i18n config.
    */
   googleAnalyticsId?: InputMaybe<Scalars['String']['input']>;
+  /** To create an assetlinks.json file for the Android app. */
+  googlePlaystore?: InputMaybe<GraphCommerceGooglePlaystoreConfig>;
   /**
    * Google reCAPTCHA site key.
    * When using reCAPTCHA, this value is required, even if you are configuring different values for each locale.
@@ -218,18 +250,20 @@ export type GraphCommerceConfig = {
    * Project settings -> API Access -> High Performance Read-only Content API
    */
   hygraphEndpoint: Scalars['String']['input'];
-  /** Hygraph Management API. **Only used for migrations.** */
-  hygraphManagementApi?: InputMaybe<Scalars['String']['input']>;
-  /** Hygraph Project ID. **Only used for migrations.** */
-  hygraphProjectId?: InputMaybe<Scalars['String']['input']>;
   /**
-   * Content API. **Only used for migrations.**
+   * Hygraph Management API. **Only used for migrations.**
    *
-   * > Regular read & write endpoint that allows querying and mutating data in your project.
-   *
-   * Project settings -> API Access -> Content API
+   * Optional: If the hygraphEndpoint is configured with the 'High Performance Content
+   * API', this field is not required.
    */
-  hygraphWriteAccessEndpoint?: InputMaybe<Scalars['String']['input']>;
+  hygraphManagementApi?: InputMaybe<Scalars['String']['input']>;
+  /**
+   * Hygraph Project ID. **Only used for migrations.**
+   *
+   * Optional: If the hygraphEndpoint is configured with the 'High Performance Content
+   * API', this field is not required.
+   */
+  hygraphProjectId?: InputMaybe<Scalars['String']['input']>;
   /**
    * Hygraph Management SDK Authorization Token. **Only used for migrations.**
    *
@@ -256,7 +290,6 @@ export type GraphCommerceConfig = {
    *   - Can see schema view
    *
    * ```
-   * GC_HYGRAPH_WRITE_ACCESS_ENDPOINT="https://...hygraph.com/v2/..."
    * GC_HYGRAPH_WRITE_ACCESS_TOKEN="AccessTokenFromHygraph"
    * yarn graphcommerce hygraph-migrate
    * ```
@@ -275,6 +308,14 @@ export type GraphCommerceConfig = {
    * - https://magento2.test/graphql
    */
   magentoEndpoint: Scalars['String']['input'];
+  /**
+   * Version of the Magento backend.
+   *
+   * Values: 245, 246, 247 for Magento 2.4.5, 2.4.6, 2.4.7 respectively.
+   */
+  magentoVersion: Scalars['Int']['input'];
+  /** Allows the option to require login or completely disable certain sections of the site, can be overriden per storeview with the storefrontConfig */
+  permissions?: InputMaybe<GraphCommercePermissions>;
   /** To enable next.js' preview mode, configure the secret you'd like to use. */
   previewSecret?: InputMaybe<Scalars['String']['input']>;
   /**
@@ -285,6 +326,13 @@ export type GraphCommerceConfig = {
   productFiltersLayout?: InputMaybe<ProductFiltersLayout>;
   /** Product filters with better UI for mobile and desktop. */
   productFiltersPro?: InputMaybe<Scalars['Boolean']['input']>;
+  /**
+   * Pagination variant for the product listings.
+   *
+   * COMPACT means: "< Page X of Y >"
+   * EXTENDED means: "< 1 2 ... 4 [5] 6 ... 10 11 >"
+   */
+  productListPaginationVariant?: InputMaybe<PaginationVariant>;
   /**
    * By default we route products to /p/[url] but you can change this to /product/[url] if you wish.
    *
@@ -311,6 +359,8 @@ export type GraphCommerceConfig = {
 
 /** Debug configuration for GraphCommerce */
 export type GraphCommerceDebugConfig = {
+  /** Enable debugging interface to debug sessions */
+  cart?: InputMaybe<Scalars['Boolean']['input']>;
   /** Reports which plugins are enabled or disabled. */
   pluginStatus?: InputMaybe<Scalars['Boolean']['input']>;
   /** Enable debugging interface to debug sessions */
@@ -332,6 +382,26 @@ export type GraphCommerceDebugConfig = {
   webpackDuplicatesPlugin?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
+/** See https://developer.android.com/training/app-links/verify-android-applinks#web-assoc */
+export type GraphCommerceGooglePlaystoreConfig = {
+  /** The package name of the Android app. */
+  packageName: Scalars['String']['input'];
+  /** The sha256 certificate fingerprint of the Android app. */
+  sha256CertificateFingerprint: Scalars['String']['input'];
+};
+
+/** Permissions input */
+export type GraphCommercePermissions = {
+  /** Changes the availability of the add to cart buttons and the cart page to either customer only or completely disables it. */
+  cart?: InputMaybe<CartPermissions>;
+  /** Changes the availability of the checkout to either customer only or completely disables it. */
+  checkout?: InputMaybe<CartPermissions>;
+  /** Enables / disabled the account section of the website. DISABLE_REGISTRATION will only disable the registration page. */
+  customerAccount?: InputMaybe<CustomerAccountPermissions>;
+  /** Allows the option to require login or completely disable the site. */
+  website?: InputMaybe<WebsitePermissions>;
+};
+
 /** All storefront configuration for the project */
 export type GraphCommerceStorefrontConfig = {
   /**
@@ -345,6 +415,12 @@ export type GraphCommerceStorefrontConfig = {
   canonicalBaseUrl?: InputMaybe<Scalars['String']['input']>;
   /** Due to a limitation of the GraphQL API it is not possible to determine if a cart should be displayed including or excluding tax. */
   cartDisplayPricesInclTax?: InputMaybe<Scalars['Boolean']['input']>;
+  /**
+   * Enables company fields inside the checkout:
+   * - Company name
+   * - VAT ID
+   */
+  customerCompanyFieldsEnable?: InputMaybe<Scalars['Boolean']['input']>;
   /**
    * There can only be one entry with defaultLocale set to true.
    * - If there are more, the first one is used.
@@ -384,6 +460,8 @@ export type GraphCommerceStorefrontConfig = {
    * - b2b-us
    */
   magentoStoreCode: Scalars['String']['input'];
+  /** Allows the option to require login or completely disable certain sections of the site on a per store basis */
+  permissions?: InputMaybe<GraphCommercePermissions>;
   /**
    * Allow the site to be indexed by search engines.
    * If false, the robots.txt file will be set to disallow all.
@@ -408,6 +486,10 @@ export type MagentoConfigurableVariantValues = {
   url?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
+export type PaginationVariant =
+  | 'COMPACT'
+  | 'EXTENDED';
+
 export type ProductFiltersLayout =
   | 'DEFAULT'
   | 'SIDEBAR';
@@ -431,6 +513,9 @@ export type SidebarGalleryPaginationVariant =
   | 'DOTS'
   | 'THUMBNAILS_BOTTOM';
 
+export type WebsitePermissions =
+  | 'ENABLED';
+
 
 type Properties<T> = Required<{
   [K in keyof T]: z.ZodType<T[K], any, T[K]>;
@@ -442,11 +527,21 @@ export const isDefinedNonNullAny = (v: any): v is definedNonNullAny => v !== und
 
 export const definedNonNullAnySchema = z.any().refine((v) => isDefinedNonNullAny(v));
 
+export const CartPermissionsSchema = z.enum(['CUSTOMER_ONLY', 'DISABLED', 'ENABLED']);
+
 export const CompareVariantSchema = z.enum(['CHECKBOX', 'ICON']);
+
+export const ContainerSizingSchema = z.enum(['BREAKPOINT', 'FULL_WIDTH']);
+
+export const CustomerAccountPermissionsSchema = z.enum(['DISABLED', 'DISABLE_REGISTRATION', 'ENABLED']);
+
+export const PaginationVariantSchema = z.enum(['COMPACT', 'EXTENDED']);
 
 export const ProductFiltersLayoutSchema = z.enum(['DEFAULT', 'SIDEBAR']);
 
 export const SidebarGalleryPaginationVariantSchema = z.enum(['DOTS', 'THUMBNAILS_BOTTOM']);
+
+export const WebsitePermissionsSchema = z.enum(['ENABLED']);
 
 export function DatalayerConfigSchema(): z.ZodObject<Properties<DatalayerConfig>> {
   return z.object({
@@ -456,32 +551,41 @@ export function DatalayerConfigSchema(): z.ZodObject<Properties<DatalayerConfig>
 
 export function GraphCommerceConfigSchema(): z.ZodObject<Properties<GraphCommerceConfig>> {
   return z.object({
+    breadcrumbs: z.boolean().default(false).nullish(),
     canonicalBaseUrl: z.string().min(1),
     cartDisplayPricesInclTax: z.boolean().nullish(),
     compare: z.boolean().nullish(),
-    compareVariant: CompareVariantSchema.nullish(),
-    configurableVariantForSimple: z.boolean().nullish(),
+    compareVariant: CompareVariantSchema.default("ICON").nullish(),
+    configurableVariantForSimple: z.boolean().default(false).nullish(),
     configurableVariantValues: MagentoConfigurableVariantValuesSchema().nullish(),
-    crossSellsHideCartItems: z.boolean().nullish(),
-    crossSellsRedirectItems: z.boolean().nullish(),
-    customerRequireEmailConfirmation: z.boolean().nullish(),
+    containerSizingContent: ContainerSizingSchema.default("FULL_WIDTH").nullish(),
+    containerSizingShell: ContainerSizingSchema.default("FULL_WIDTH").nullish(),
+    crossSellsHideCartItems: z.boolean().default(false).nullish(),
+    crossSellsRedirectItems: z.boolean().default(false).nullish(),
+    customerAddressNoteEnable: z.boolean().nullish(),
+    customerCompanyFieldsEnable: z.boolean().nullish(),
+    customerDeleteEnabled: z.boolean().nullish(),
+    customerXMagentoCacheIdDisable: z.boolean().nullish(),
     dataLayer: DatalayerConfigSchema().nullish(),
     debug: GraphCommerceDebugConfigSchema().nullish(),
-    demoMode: z.boolean().nullish(),
+    demoMode: z.boolean().default(true).nullish(),
     enableGuestCheckoutLogin: z.boolean().nullish(),
     googleAnalyticsId: z.string().nullish(),
+    googlePlaystore: GraphCommerceGooglePlaystoreConfigSchema().nullish(),
     googleRecaptchaKey: z.string().nullish(),
     googleTagmanagerId: z.string().nullish(),
     hygraphEndpoint: z.string().min(1),
     hygraphManagementApi: z.string().nullish(),
     hygraphProjectId: z.string().nullish(),
-    hygraphWriteAccessEndpoint: z.string().nullish(),
     hygraphWriteAccessToken: z.string().nullish(),
     limitSsg: z.boolean().nullish(),
     magentoEndpoint: z.string().min(1),
+    magentoVersion: z.number(),
+    permissions: GraphCommercePermissionsSchema().nullish(),
     previewSecret: z.string().nullish(),
-    productFiltersLayout: ProductFiltersLayoutSchema.nullish(),
+    productFiltersLayout: ProductFiltersLayoutSchema.default("DEFAULT").nullish(),
     productFiltersPro: z.boolean().nullish(),
+    productListPaginationVariant: PaginationVariantSchema.default("COMPACT").nullish(),
     productRoute: z.string().nullish(),
     recentlyViewedProducts: RecentlyViewedProductsConfigSchema().nullish(),
     robotsAllow: z.boolean().nullish(),
@@ -494,6 +598,7 @@ export function GraphCommerceConfigSchema(): z.ZodObject<Properties<GraphCommerc
 
 export function GraphCommerceDebugConfigSchema(): z.ZodObject<Properties<GraphCommerceDebugConfig>> {
   return z.object({
+    cart: z.boolean().nullish(),
     pluginStatus: z.boolean().nullish(),
     sessions: z.boolean().nullish(),
     webpackCircularDependencyPlugin: z.boolean().nullish(),
@@ -501,10 +606,27 @@ export function GraphCommerceDebugConfigSchema(): z.ZodObject<Properties<GraphCo
   })
 }
 
+export function GraphCommerceGooglePlaystoreConfigSchema(): z.ZodObject<Properties<GraphCommerceGooglePlaystoreConfig>> {
+  return z.object({
+    packageName: z.string().min(1),
+    sha256CertificateFingerprint: z.string().min(1)
+  })
+}
+
+export function GraphCommercePermissionsSchema(): z.ZodObject<Properties<GraphCommercePermissions>> {
+  return z.object({
+    cart: CartPermissionsSchema.nullish(),
+    checkout: CartPermissionsSchema.nullish(),
+    customerAccount: CustomerAccountPermissionsSchema.nullish(),
+    website: WebsitePermissionsSchema.nullish()
+  })
+}
+
 export function GraphCommerceStorefrontConfigSchema(): z.ZodObject<Properties<GraphCommerceStorefrontConfig>> {
   return z.object({
     canonicalBaseUrl: z.string().nullish(),
     cartDisplayPricesInclTax: z.boolean().nullish(),
+    customerCompanyFieldsEnable: z.boolean().nullish(),
     defaultLocale: z.boolean().nullish(),
     domain: z.string().nullish(),
     googleAnalyticsId: z.string().nullish(),
@@ -514,6 +636,7 @@ export function GraphCommerceStorefrontConfigSchema(): z.ZodObject<Properties<Gr
     linguiLocale: z.string().nullish(),
     locale: z.string().min(1),
     magentoStoreCode: z.string().min(1),
+    permissions: GraphCommercePermissionsSchema().nullish(),
     robotsAllow: z.boolean().nullish()
   })
 }

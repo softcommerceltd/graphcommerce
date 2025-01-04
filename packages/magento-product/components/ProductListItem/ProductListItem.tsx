@@ -1,27 +1,22 @@
-import { ImageProps } from '@graphcommerce/image'
+import type { ImageProps } from '@graphcommerce/image'
 import { extendableComponent } from '@graphcommerce/next-ui'
-import { SxProps, Theme, useEventCallback, Skeleton } from '@mui/material'
+import type { SxProps, Theme } from '@mui/material'
+import { Skeleton, useEventCallback } from '@mui/material'
 import React from 'react'
-import { ProductListItemFragment } from '../../Api/ProductListItem.gql'
+import type { ProductListItemFragment } from '../../Api/ProductListItem.gql'
 import { productLink } from '../../hooks/useProductLink'
 import { ProductListPrice } from '../ProductListPrice/ProductListPrice'
 import { ProductDiscountLabel } from './ProductDiscountLabel'
-import {
-  ProductListItemImageProps,
-  ProductListItemImage,
-  ProductListItemImageSkeleton,
-} from './ProductListItemImage'
-import {
+import type { ProductListItemImageProps } from './ProductListItemImage'
+import { ProductListItemImage, ProductListItemImageSkeleton } from './ProductListItemImage'
+import type {
   ProductListItemImageAreaKeys,
   ProductListsItemImageAreaProps,
-  ProductListItemImageAreas,
-  ProductImageContainer,
 } from './ProductListItemImageContainer'
-import { ProductListItemLinkOrDiv } from './ProductListItemLinkOrDiv'
-import {
-  ProductListItemTitleAndPrice,
-  ProductListItemTitleAndPriceProps,
-} from './ProductListItemTitleAndPrice'
+import { ProductImageContainer, ProductListItemImageAreas } from './ProductListItemImageContainer'
+import { ProductListItemLinkOrDiv, ProductListItemLinkOrDivProps } from './ProductListItemLinkOrDiv'
+import type { ProductListItemTitleAndPriceProps } from './ProductListItemTitleAndPrice'
+import { ProductListItemTitleAndPrice } from './ProductListItemTitleAndPrice'
 
 const { classes, selectors } = extendableComponent('ProductListItem', [
   'root',
@@ -45,25 +40,33 @@ type StyleProps = {
   imageOnly?: boolean
 }
 
-type BaseProps = {
+export type BaseProps = {
   imageOnly?: boolean
   children?: React.ReactNode
   sx?: SxProps<Theme>
-  // eslint-disable-next-line react/no-unused-prop-types
-  onClick?: (event: React.MouseEvent<HTMLAnchorElement>, item: ProductListItemFragment) => void
+  onClick?: (
+    event: React.MouseEvent<HTMLAnchorElement | HTMLDivElement>,
+    item: ProductListItemFragment,
+  ) => void
+  slotProps?: {
+    root?: Partial<ProductListItemLinkOrDivProps>
+    image?: Partial<ProductListItemImageProps>
+    imageAreas?: Partial<ProductListsItemImageAreaProps>
+    titleAndPrice?: Partial<ProductListItemTitleAndPriceProps>
+  }
 } & StyleProps &
   Omit<ProductListItemTitleAndPriceProps, 'title' | 'classes' | 'children'> &
   Omit<ProductListItemImageProps, 'classes'> &
   Omit<ProductListsItemImageAreaProps, 'classes'> &
   Pick<ImageProps, 'loading' | 'sizes' | 'dontReportWronglySizedImages'>
 
-// eslint-disable-next-line react/no-unused-prop-types
-type SkeletonProps = BaseProps & { __typename: 'Skeleton' }
+export type SkeletonProps = BaseProps & { __typename: 'Skeleton' }
 
-type ProductProps = BaseProps & ProductListItemFragment
+export type ProductProps = BaseProps & ProductListItemFragment
 
 export type ProductListItemProps = ProductProps | SkeletonProps
 
+/** @public */
 export function ProductListItemReal(props: ProductProps) {
   const {
     subTitle,
@@ -83,18 +86,20 @@ export function ProductListItemReal(props: ProductProps) {
     titleComponent = 'h2',
     sx = [],
     onClick,
+    slotProps = {},
   } = props
-
-  const handleClick = useEventCallback(
-    (e: React.MouseEvent<HTMLAnchorElement>) => onClick?.(e, props),
-  )
 
   return (
     <ProductListItemLinkOrDiv
       href={productLink(props)}
       className={classes.root}
-      sx={sx}
-      onClick={handleClick}
+      onClick={(e: React.MouseEvent<HTMLAnchorElement | HTMLDivElement>) => onClick?.(e, props)}
+      {...slotProps.root}
+      sx={[
+        ...(Array.isArray(sx) ? sx : [sx]),
+        ...(Array.isArray(slotProps.root?.sx) ? slotProps.root.sx : [slotProps.root?.sx]),
+      ]}
+      ref={slotProps.root?.ref as React.Ref<HTMLAnchorElement | HTMLDivElement>}
     >
       <ProductImageContainer className={classes.imageContainer}>
         <ProductListItemImage
@@ -105,6 +110,7 @@ export function ProductListItemReal(props: ProductProps) {
           loading={loading}
           sizes={sizes}
           dontReportWronglySizedImages={dontReportWronglySizedImages}
+          {...slotProps.image}
         />
 
         {!imageOnly && (
@@ -119,6 +125,7 @@ export function ProductListItemReal(props: ProductProps) {
                 {topLeft}
               </>
             }
+            {...slotProps.imageAreas}
           />
         )}
       </ProductImageContainer>
@@ -130,6 +137,7 @@ export function ProductListItemReal(props: ProductProps) {
             titleComponent={titleComponent}
             title={name}
             subTitle={subTitle}
+            {...slotProps.titleAndPrice}
           >
             <ProductListPrice {...price_range.minimum_price} />
           </ProductListItemTitleAndPrice>
@@ -140,13 +148,30 @@ export function ProductListItemReal(props: ProductProps) {
   )
 }
 
-export function ProductListItemSkeleton(props: SkeletonProps) {
-  const { children, imageOnly = false, aspectRatio, titleComponent = 'h2', sx = [] } = props
+/** @public */
+export function ProductListItemSkeleton(props: BaseProps) {
+  const {
+    children,
+    imageOnly = false,
+    aspectRatio,
+    titleComponent = 'h2',
+    sx = [],
+    slotProps = {},
+  } = props
 
   return (
-    <ProductListItemLinkOrDiv sx={sx} className={classes.root}>
+    <ProductListItemLinkOrDiv
+      sx={sx}
+      className={classes.root}
+      {...slotProps.root}
+      ref={slotProps.root?.ref as React.Ref<HTMLAnchorElement | HTMLDivElement>}
+    >
       <ProductImageContainer className={classes.imageContainer}>
-        <ProductListItemImageSkeleton classes={classes} aspectRatio={aspectRatio} />
+        <ProductListItemImageSkeleton
+          classes={classes}
+          aspectRatio={aspectRatio}
+          {...slotProps.image}
+        />
       </ProductImageContainer>
 
       {!imageOnly && (
@@ -156,6 +181,7 @@ export function ProductListItemSkeleton(props: SkeletonProps) {
             titleComponent={titleComponent}
             title={<Skeleton variant='text' sx={{ width: '100px' }} />}
             subTitle={<Skeleton variant='text' sx={{ width: '20px' }} />}
+            {...slotProps.titleAndPrice}
           >
             <Skeleton variant='text' sx={{ width: '20px' }} />
           </ProductListItemTitleAndPrice>
@@ -169,6 +195,7 @@ export function ProductListItemSkeleton(props: SkeletonProps) {
 function isSkeleton(props: ProductListItemProps): props is SkeletonProps {
   return props.__typename === 'Skeleton'
 }
+
 export function ProductListItem(props: ProductListItemProps) {
   return isSkeleton(props) ? (
     <ProductListItemSkeleton {...props} />

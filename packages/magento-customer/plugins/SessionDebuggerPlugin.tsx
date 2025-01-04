@@ -1,6 +1,6 @@
 import type { PagesProps } from '@graphcommerce/framer-next-pages'
 import { useApolloClient } from '@graphcommerce/graphql/apollo'
-import type { IfConfig, PluginConfig, PluginProps } from '@graphcommerce/next-config'
+import type { PluginConfig, PluginProps } from '@graphcommerce/next-config'
 import { Button } from '@mui/material'
 import { CustomerTokenDocument } from '../hooks/CustomerToken.gql'
 
@@ -25,9 +25,9 @@ export function FramerNextPages(props: PluginProps<PagesProps>) {
           onClick={() => {
             const currentToken = client.readQuery({ query: CustomerTokenDocument })
             if (!currentToken?.customerToken?.token) {
-              console.log('No customerToken available, nothing to break')
+              console.warn('No customerToken available, nothing to break')
             } else {
-              console.log(`Changing current token to a random one`)
+              console.warn('Changing current token to a random one')
 
               client.writeQuery({
                 query: CustomerTokenDocument,

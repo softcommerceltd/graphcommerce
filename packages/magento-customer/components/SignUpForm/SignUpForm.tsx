@@ -1,22 +1,30 @@
 import { PasswordRepeatElement, SwitchElement } from '@graphcommerce/ecommerce-ui'
+import { useQuery } from '@graphcommerce/graphql'
 import { graphqlErrorByCategory } from '@graphcommerce/magento-graphql'
+import { StoreConfigDocument } from '@graphcommerce/magento-store'
 import { Button, FormActions, FormRow } from '@graphcommerce/next-ui'
+import type { UseFormClearErrors, UseFormSetError } from '@graphcommerce/react-hook-form'
 import { FormPersist, useFormGqlMutation } from '@graphcommerce/react-hook-form'
+import { t } from '@lingui/macro'
 import { Trans } from '@lingui/react'
 import { Alert } from '@mui/material'
 import { useSignInForm } from '../../hooks/useSignInForm'
 import { ApolloCustomerErrorSnackbar } from '../ApolloCustomerError/ApolloCustomerErrorSnackbar'
 import { NameFields } from '../NameFields/NameFields'
 import { ValidatedPasswordElement } from '../ValidatedPasswordElement/ValidatedPasswordElement'
-import { SignUpDocument, SignUpMutation, SignUpMutationVariables } from './SignUp.gql'
+import type { SignUpMutation, SignUpMutationVariables } from './SignUp.gql'
+import { SignUpDocument } from './SignUp.gql'
 
-type SignUpFormProps = { email: string }
-
-const requireEmailValidation = import.meta.graphCommerce.customerRequireEmailConfirmation ?? false
+type SignUpFormProps = {
+  email?: string
+  setError: UseFormSetError<{ email?: string; requestedMode?: 'signin' | 'signup' }>
+  clearErrors: UseFormClearErrors<{ email?: string; requestedMode?: 'signin' | 'signup' }>
+}
 
 export function SignUpForm(props: SignUpFormProps) {
-  const { email } = props
+  const { email, setError, clearErrors } = props
 
+  const storeConfig = useQuery(StoreConfigDocument)
   const signIn = useSignInForm({ email })
   const form = useFormGqlMutation<
     SignUpMutation,
@@ -25,10 +33,18 @@ export function SignUpForm(props: SignUpFormProps) {
     SignUpDocument,
     {
       defaultValues: { email },
-      onBeforeSubmit: (values) => ({ ...values, email }),
-      experimental_useV2: true,
+      onBeforeSubmit: (values) => {
+        if (!email) {
+          // eslint-disable-next-line @typescript-eslint/no-use-before-define
+          setError('email', { message: t`Please enter a valid email address` })
+          return false
+        }
+        // eslint-disable-next-line @typescript-eslint/no-use-before-define
+        clearErrors()
+        return { ...values, email: email ?? '' }
+      },
       onComplete: async (result, variables) => {
-        if (!result.errors && !requireEmailValidation) {
+        if (!result.errors && !storeConfig.data?.storeConfig?.create_account_confirmation) {
           signIn.setValue('email', variables.email)
           signIn.setValue('password', variables.password)
           await signIn.handleSubmit(() => {})()
@@ -43,10 +59,17 @@ export function SignUpForm(props: SignUpFormProps) {
 
   const submitHandler = handleSubmit(() => {})
 
-  if (requireEmailValidation && form.formState.isSubmitSuccessful) {
+  if (
+    storeConfig.data?.storeConfig?.create_account_confirmation &&
+    !error &&
+    form.formState.isSubmitSuccessful
+  ) {
     return (
       <Alert>
-        <Trans id='Please check your inbox to validate your email ({email})' values={{ email }} />
+        <Trans
+          id='Registration successful. Please check your inbox to confirm your email address ({email})'
+          values={{ email }}
+        />
       </Alert>
     )
   }
@@ -54,7 +77,6 @@ export function SignUpForm(props: SignUpFormProps) {
   return (
     <form onSubmit={submitHandler} noValidate>
       <FormRow>
-        <FormPersist form={form} name='SignUp' exclude={['password', 'confirmPassword']} />
         <ValidatedPasswordElement
           control={control}
           name='password'
@@ -103,6 +125,7 @@ export function SignUpForm(props: SignUpFormProps) {
           <Trans id='Create Account' />
         </Button>
       </FormActions>
+      <FormPersist form={form} name='SignUp' exclude={['password', 'confirmPassword']} />
     </form>
   )
 }

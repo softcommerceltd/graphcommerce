@@ -1,20 +1,19 @@
-import { useWatch } from '@graphcommerce/ecommerce-ui'
+import { ActionCardListForm, useWatch } from '@graphcommerce/ecommerce-ui'
 import type { ProductAttributeFilterInput } from '@graphcommerce/graphql-mesh'
 import {
-  ActionCardListForm,
   ActionCard,
-  filterNonNullableKeys,
-  IconSvg,
-  iconCirle,
   ActionCardAccordion,
   Button,
+  IconSvg,
+  filterNonNullableKeys,
+  iconCirle,
 } from '@graphcommerce/next-ui'
 import { Trans } from '@lingui/react'
 import { Box } from '@mui/material'
 import { useMemo } from 'react'
 import { isFilterTypeEqual } from '../ProductListItems/filterTypes'
 import { useProductFiltersPro } from './ProductFiltersPro'
-import { FilterProps } from './ProductFiltersProAggregations'
+import type { FilterProps } from './ProductFiltersProAggregations'
 
 export function ProductFilterEqualSection(props: FilterProps) {
   const { aggregation } = props
@@ -66,7 +65,7 @@ export function ProductFilterEqualSection(props: FilterProps) {
           multiple
           layout='list'
           variant='default'
-          size='medium'
+          size='responsive'
           items={items}
           showMoreAfter={4}
         />

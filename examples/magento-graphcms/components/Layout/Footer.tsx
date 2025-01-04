@@ -1,7 +1,8 @@
 import { Image } from '@graphcommerce/image'
+import { useCheckoutGuestEnabled } from '@graphcommerce/magento-cart'
 import { StoreSwitcherButton } from '@graphcommerce/magento-store'
 import { Footer as FooterBase } from '@graphcommerce/next-ui'
-import { Trans } from '@lingui/react'
+import { Trans } from '@lingui/macro'
 import { Button, IconButton, Link } from '@mui/material'
 import { FooterQueryFragment } from './FooterQueryFragment.gql'
 
@@ -9,6 +10,7 @@ export type FooterProps = FooterQueryFragment
 
 export function Footer(props: FooterProps) {
   const { footer } = props
+  const cartEnabled = useCheckoutGuestEnabled()
 
   return (
     <FooterBase
@@ -34,17 +36,31 @@ export function Footer(props: FooterProps) {
       storeSwitcher={<StoreSwitcherButton />}
       customerService={
         <Button href='/service' variant='pill'>
-          <Trans id='Customer Service' />
+          <Trans>Customer Service</Trans>
         </Button>
       }
       copyright={
         <>
           <span>{footer?.copyright}</span>
+
           {footer?.legalLinks?.map((link) => (
             <Link key={link.title} href={link.url} color='textPrimary' underline='always'>
               {link.title}
             </Link>
           ))}
+          {import.meta.graphCommerce.magentoVersion >= 247 && cartEnabled && (
+            <Link href='/guest/orderstatus' color='textPrimary' underline='always'>
+              <Trans>Order status</Trans>
+            </Link>
+          )}
+          {import.meta.graphCommerce.magentoVersion >= 247 && (
+            <Link href='/service/contact-us' color='textPrimary' underline='always'>
+              <Trans>Contact</Trans>
+            </Link>
+          )}
+          <Link href='/service/newsletter' color='textPrimary' underline='always'>
+            <Trans>Newletter</Trans>
+          </Link>
         </>
       }
     />

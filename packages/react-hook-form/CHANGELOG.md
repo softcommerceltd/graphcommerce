@@ -1,383 +1,80 @@
 # Change Log
 
-## 8.1.0-canary.12
+## 9.0.4-canary.0
 
-## 8.1.0-canary.11
+## 9.0.3
 
-## 8.1.0-canary.10
+## 9.0.3-canary.0
 
-## 8.1.0-canary.9
-
-## 8.1.0-canary.8
-
-## 8.1.0-canary.7
-
-## 8.1.0-canary.6
-
-## 8.1.0-canary.5
-
-## 8.0.6-canary.4
-
-## 8.0.6-canary.3
-
-## 8.0.6-canary.2
+## 9.0.2
 
 ### Patch Changes
 
-- [#2234](https://github.com/graphcommerce-org/graphcommerce/pull/2234) [`43bd04a`](https://github.com/graphcommerce-org/graphcommerce/commit/43bd04a777c5800cc7e01bee1e123a5aad82f194) - Add deprecation warnings for useFormMuiRegister. Refactor useFormPersist to useWatch and add a separate `<FormPersist/>` component to prevent rerenders.
-  ([@FrankHarland](https://github.com/FrankHarland))
+- [`c40c559`](https://github.com/graphcommerce-org/graphcommerce/commit/c40c5596bcc8f3c2e1e15c9e6ad85bfa1f9154b0) - Solve an issue where the payment submission would remain in a spinning state when placing an order failed: `useFormGql` will now set `root` error on the form when there is an error response on the GraphQL operation, an error is thrown in onBeforeSubmit and in onSuccess. ([@paales](https://github.com/paales))
 
-- [#2234](https://github.com/graphcommerce-org/graphcommerce/pull/2234) [`0767bc4`](https://github.com/graphcommerce-org/graphcommerce/commit/0767bc40f7b596209f24ca4e745ff0441f3275c9) - Upgrade input components to no longer use muiRegister, which improves INP scores
-  ([@FrankHarland](https://github.com/FrankHarland))
+## 9.0.2-canary.0
 
-- [#2234](https://github.com/graphcommerce-org/graphcommerce/pull/2234) [`02da217`](https://github.com/graphcommerce-org/graphcommerce/commit/02da2172ef702133510f6923190efae2801032c5) - Migrate most usages of useFormAutoSubmit to <FormAutoSubmit/> and deprecated useFormAutoSubmit
-  ([@FrankHarland](https://github.com/FrankHarland))
+### Patch Changes
 
-- [#2234](https://github.com/graphcommerce-org/graphcommerce/pull/2234) [`530076e`](https://github.com/graphcommerce-org/graphcommerce/commit/530076e3664703cb8b577b7fcf1998a420819f60) - Moved all usages of useFormPersist to the <FormPersist/> component to prevent rerenders.
-  ([@FrankHarland](https://github.com/FrankHarland))
+- [`c40c559`](https://github.com/graphcommerce-org/graphcommerce/commit/c40c5596bcc8f3c2e1e15c9e6ad85bfa1f9154b0) - Solve an issue where the payment submission would remain in a spinning state when placing an order failed: `useFormGql` will now set `root` error on the form when there is an error response on the GraphQL operation, an error is thrown in onBeforeSubmit and in onSuccess. ([@paales](https://github.com/paales))
 
-- [#2234](https://github.com/graphcommerce-org/graphcommerce/pull/2234) [`1a6d0c4`](https://github.com/graphcommerce-org/graphcommerce/commit/1a6d0c4a3584b1e404b444f1ca44c68eaad56cb7) - Mark useFormValidFields as deprecated: Please use TextInputElement, SelectElement, etc. with the showValid prop
-  ([@FrankHarland](https://github.com/FrankHarland))
+## 9.0.1
 
-## 8.0.6-canary.1
+## 9.0.1-canary.1
 
-## 8.0.6-canary.0
+## 9.0.0
+
+### Major Changes
+
+- [#2234](https://github.com/graphcommerce-org/graphcommerce/pull/2234) [`530076e`](https://github.com/graphcommerce-org/graphcommerce/commit/530076e3664703cb8b577b7fcf1998a420819f60) - Big INP improvments: Moved all usages of `useFormPersist` to the `<FormPersist/>` component to prevent rerenders. ([@FrankHarland](https://github.com/FrankHarland))
+
+### Patch Changes
+
+- [#2341](https://github.com/graphcommerce-org/graphcommerce/pull/2341) [`16e2980`](https://github.com/graphcommerce-org/graphcommerce/commit/16e2980da4b72330642e59e8c82d1acde387e4fc) - `useFormGql` and it's derived hooks now have a new `skipUnchanged` prop. The form will only be submitted when there are fields dirty in a form. This reduces the amount of queries ran in the checkout greatly. ([@Giovanni-Schroevers](https://github.com/Giovanni-Schroevers))
+
+- [#2234](https://github.com/graphcommerce-org/graphcommerce/pull/2234) [`43bd04a`](https://github.com/graphcommerce-org/graphcommerce/commit/43bd04a777c5800cc7e01bee1e123a5aad82f194) - Added deprecation warnings for `useFormMuiRegister`. Refactored `useFormPersist` to use `useWatch` and added a separate `<FormPersist />` component to prevent rerenders. ([@FrankHarland](https://github.com/FrankHarland))
+
+- [#2325](https://github.com/graphcommerce-org/graphcommerce/pull/2325) [`058fb17`](https://github.com/graphcommerce-org/graphcommerce/commit/058fb1777bdaa51ded6d37529e59a3cc5f0eac06) - Solve an issue where `onBeforeSubmit` and `onComplete` would become an 'stale closure' where variables inside wouldn't be updated. By wrapping `onBeforeSubmit` and `onComplete` in `useEventCallback` these functions are updated when outside values get changed. ([@Giovanni-Schroevers](https://github.com/Giovanni-Schroevers))
+
+- [#2391](https://github.com/graphcommerce-org/graphcommerce/pull/2391) [`c1fa10f`](https://github.com/graphcommerce-org/graphcommerce/commit/c1fa10f995f562741b7574d465580e5405982a70) - Prevent overwriting custom context in useFormGqlMutation by merging operationOptions before execution. ([@wimvdputten](https://github.com/wimvdputten))
+
+- [#2341](https://github.com/graphcommerce-org/graphcommerce/pull/2341) [`1d6512d`](https://github.com/graphcommerce-org/graphcommerce/commit/1d6512d4118cfb46602aa1f2432c3566fdb3261d) - Rename `experimental_useV2` prop to `deprecated_useV1` in `useFromGql` and enable it by default. ([@Giovanni-Schroevers](https://github.com/Giovanni-Schroevers))
+
+- [#2234](https://github.com/graphcommerce-org/graphcommerce/pull/2234) [`0767bc4`](https://github.com/graphcommerce-org/graphcommerce/commit/0767bc40f7b596209f24ca4e745ff0441f3275c9) - Upgrade input components to no longer use `muiRegister`, which improves INP scores. ([@FrankHarland](https://github.com/FrankHarland))
+
+- [#2341](https://github.com/graphcommerce-org/graphcommerce/pull/2341) [`af45239`](https://github.com/graphcommerce-org/graphcommerce/commit/af452399eaab59ee4e13484fdc9cb0a7660da531) - When a `useFormGql` throws an error in the `onBeforeSubmit` method or `onComplete` method it will be set as an ApolloError with the message, allowing it to be displayed somewhere. The `<PaymentMethodButton />` will now render this as an `<ErrorSnackbar />`. ([@Giovanni-Schroevers](https://github.com/Giovanni-Schroevers))
+
+- [#2421](https://github.com/graphcommerce-org/graphcommerce/pull/2421) [`d500643`](https://github.com/graphcommerce-org/graphcommerce/commit/d500643138799b6db1610cb10a1d065d6219d8ea) - Resolve peer dependency issues so we get a clean install ([@paales](https://github.com/paales))
+
+- [#2314](https://github.com/graphcommerce-org/graphcommerce/pull/2314) [`490bbfb`](https://github.com/graphcommerce-org/graphcommerce/commit/490bbfb5d88a7f58e83fa9c8b7f475c277a0eda3) - Added missing dependencies of `lodash` and `@types/lodash`. ([@paales](https://github.com/paales))
+
+- [#2305](https://github.com/graphcommerce-org/graphcommerce/pull/2305) [`77e8297`](https://github.com/graphcommerce-org/graphcommerce/commit/77e82976816994336c616208a651cb18ce9ea270) - Fix bug with persist not applying saved changes by moving `<FromPersist/>` below the form components. ([@Giovanni-Schroevers](https://github.com/Giovanni-Schroevers))
+
+- [#2234](https://github.com/graphcommerce-org/graphcommerce/pull/2234) [`1a6d0c4`](https://github.com/graphcommerce-org/graphcommerce/commit/1a6d0c4a3584b1e404b444f1ca44c68eaad56cb7) - Mark `useFormValidFields` as deprecated: Please use `<TextInputElement />`, `<SelectElement />`, etc. with the `showValid` prop. ([@FrankHarland](https://github.com/FrankHarland))
 
 ## 8.0.5
 
 ### Patch Changes
 
-- [#2237](https://github.com/graphcommerce-org/graphcommerce/pull/2237) [`60f387d`](https://github.com/graphcommerce-org/graphcommerce/commit/60f387d4a037736aa8105fa45728ee481bdaf887) - Solve an issue where the checkout address form wouldn't be automatically submitted on change.
-  ([@bramvanderholst](https://github.com/bramvanderholst))
-
-## 8.0.5-canary.10
-
-## 8.0.5-canary.9
-
-## 8.0.5-canary.8
-
-## 8.0.5-canary.7
-
-## 8.0.5-canary.6
-
-## 8.0.5-canary.5
-
-## 8.0.5-canary.4
-
-### Patch Changes
-
-- [#2237](https://github.com/graphcommerce-org/graphcommerce/pull/2237) [`60f387d`](https://github.com/graphcommerce-org/graphcommerce/commit/60f387d4a037736aa8105fa45728ee481bdaf887) - Solve an issue where the checkout address form wouldn't be automatically submitted on change.
-  ([@bramvanderholst](https://github.com/bramvanderholst))
-
-## 8.0.5-canary.3
-
-## 8.0.5-canary.2
-
-## 8.0.5-canary.1
-
-## 8.0.5-canary.0
-
-## 8.0.4
-
-## 8.0.4-canary.1
-
-## 8.0.4-canary.0
+- [#2237](https://github.com/graphcommerce-org/graphcommerce/pull/2237) [`60f387d`](https://github.com/graphcommerce-org/graphcommerce/commit/60f387d4a037736aa8105fa45728ee481bdaf887) - Solve an issue where the checkout address form wouldn't be automatically submitted on change. ([@bramvanderholst](https://github.com/bramvanderholst))
 
 ## 8.0.3
 
 ### Patch Changes
 
-- [#2206](https://github.com/graphcommerce-org/graphcommerce/pull/2206) [`855ab09`](https://github.com/graphcommerce-org/graphcommerce/commit/855ab097b9ea204a7c73c6550b7a5e9e2290f378) - Cleanup `<FormAutoSubmit/>` and remove internal hook.
-  ([@paales](https://github.com/paales))
+- [#2206](https://github.com/graphcommerce-org/graphcommerce/pull/2206) [`855ab09`](https://github.com/graphcommerce-org/graphcommerce/commit/855ab097b9ea204a7c73c6550b7a5e9e2290f378) - Cleanup `<FormAutoSubmit/>` and remove internal hook. ([@paales](https://github.com/paales))
 
-- [#2212](https://github.com/graphcommerce-org/graphcommerce/pull/2212) [`7c9f5da`](https://github.com/graphcommerce-org/graphcommerce/commit/7c9f5da1d458a19b0316c556c75415ff28bc5b2d) - Added noValidate prop so we can use the FormAutoSubmit component to submit partial forms
-  ([@paales](https://github.com/paales))
-
-## 8.0.3-canary.6
-
-## 8.0.3-canary.5
-
-### Patch Changes
-
-- [#2212](https://github.com/graphcommerce-org/graphcommerce/pull/2212) [`7c9f5da`](https://github.com/graphcommerce-org/graphcommerce/commit/7c9f5da1d458a19b0316c556c75415ff28bc5b2d) - Added noValidate prop so we can use the FormAutoSubmit component to submit partial forms
-  ([@paales](https://github.com/paales))
-
-## 8.0.3-canary.4
-
-## 8.0.3-canary.3
-
-### Patch Changes
-
-- [#2206](https://github.com/graphcommerce-org/graphcommerce/pull/2206) [`855ab09`](https://github.com/graphcommerce-org/graphcommerce/commit/855ab097b9ea204a7c73c6550b7a5e9e2290f378) - Cleanup `<FormAutoSubmit/>` and remove internal hook.
-  ([@paales](https://github.com/paales))
-
-## 8.0.3-canary.2
-
-## 8.0.3-canary.1
-
-## 8.0.3-canary.0
-
-## 8.0.2
-
-## 8.0.2-canary.3
-
-## 8.0.2-canary.2
-
-## 8.0.2-canary.1
-
-## 8.0.2-canary.0
-
-## 8.0.1
-
-## 8.0.1-canary.4
-
-## 8.0.1-canary.3
-
-## 8.0.1-canary.2
-
-## 8.0.1-canary.1
-
-## 8.0.1-canary.0
+- [#2212](https://github.com/graphcommerce-org/graphcommerce/pull/2212) [`7c9f5da`](https://github.com/graphcommerce-org/graphcommerce/commit/7c9f5da1d458a19b0316c556c75415ff28bc5b2d) - Added noValidate prop so we can use the FormAutoSubmit component to submit partial forms ([@paales](https://github.com/paales))
 
 ## 8.0.0
 
 ### Patch Changes
 
-- [#2093](https://github.com/graphcommerce-org/graphcommerce/pull/2093) [`112b041`](https://github.com/graphcommerce-org/graphcommerce/commit/112b041f01a33fbd521ce3eb3955844f96b29917) - Created a new experimental mutation abort feature inside `useFormGql`. This will allow redundant mutations to be canceled. This is enabled when the `experimental_useV2` prop on the `useFormGql` hook is used.
-  ([@mikekeehnen](https://github.com/mikekeehnen))
+- [#2093](https://github.com/graphcommerce-org/graphcommerce/pull/2093) [`112b041`](https://github.com/graphcommerce-org/graphcommerce/commit/112b041f01a33fbd521ce3eb3955844f96b29917) - Created a new experimental mutation abort feature inside `useFormGql`. This will allow redundant mutations to be canceled. This is enabled when the `experimental_useV2` prop on the `useFormGql` hook is used. ([@mikekeehnen](https://github.com/mikekeehnen))
 
-- [#2007](https://github.com/graphcommerce-org/graphcommerce/pull/2007) [`f59c276`](https://github.com/graphcommerce-org/graphcommerce/commit/f59c276605f9ed649d1197a9ba0e3f12d7c6d026) - Crosssell behavior now properly shows for the latest added product. Added latest submitted variables to be retrieved when using the useFormGql hook.
-  ([@JoshuaS98](https://github.com/JoshuaS98))
-
-## 8.0.0-canary.100
-
-## 8.0.0-canary.99
-
-## 8.0.0-canary.98
-
-## 8.0.0-canary.97
-
-## 8.0.0-canary.96
-
-## 8.0.0-canary.95
-
-## 8.0.0-canary.94
-
-## 8.0.0-canary.93
-
-## 8.0.0-canary.92
-
-## 8.0.0-canary.91
-
-## 8.0.0-canary.90
-
-## 8.0.0-canary.89
-
-## 8.0.0-canary.88
-
-## 8.0.0-canary.87
-
-## 8.0.0-canary.86
-
-## 8.0.0-canary.85
-
-## 8.0.0-canary.84
-
-## 8.0.0-canary.83
-
-## 8.0.0-canary.82
-
-## 8.0.0-canary.81
-
-## 8.0.0-canary.80
-
-## 8.0.0-canary.79
-
-## 8.0.0-canary.78
-
-## 8.0.0-canary.77
-
-## 8.0.0-canary.76
-
-## 8.0.0-canary.75
-
-## 8.0.0-canary.74
-
-## 8.0.0-canary.73
-
-## 8.0.0-canary.72
-
-## 8.0.0-canary.71
-
-## 8.0.0-canary.70
-
-## 8.0.0-canary.69
-
-## 7.1.0-canary.68
-
-## 7.1.0-canary.67
-
-## 7.1.0-canary.66
-
-## 7.1.0-canary.65
-
-## 7.1.0-canary.64
-
-## 7.1.0-canary.63
-
-## 7.1.0-canary.62
-
-## 7.1.0-canary.61
-
-## 7.1.0-canary.60
-
-## 7.1.0-canary.59
-
-## 7.1.0-canary.58
-
-## 7.1.0-canary.57
-
-## 7.1.0-canary.56
-
-## 7.1.0-canary.55
-
-## 7.1.0-canary.54
-
-## 7.1.0-canary.53
-
-## 7.1.0-canary.52
-
-## 7.1.0-canary.51
-
-## 7.1.0-canary.50
-
-## 7.1.0-canary.49
-
-## 7.1.0-canary.48
-
-## 7.1.0-canary.47
-
-## 7.1.0-canary.46
-
-## 7.1.0-canary.45
-
-## 7.1.0-canary.38
-
-## 7.1.0-canary.37
-
-## 7.1.0-canary.36
-
-## 7.1.0-canary.35
-
-## 7.1.0-canary.34
-
-## 7.1.0-canary.33
-
-## 7.1.0-canary.32
-
-## 7.1.0-canary.31
-
-## 7.1.0-canary.30
-
-## 7.1.0-canary.29
-
-## 7.1.0-canary.28
-
-## 7.1.0-canary.27
-
-## 7.1.0-canary.26
-
-## 7.1.0-canary.25
-
-## 7.1.0-canary.24
-
-## 7.1.0-canary.23
-
-## 7.1.0-canary.22
-
-### Patch Changes
-
-- [#2097](https://github.com/graphcommerce-org/graphcommerce/pull/2097) [`cdc89cedb`](https://github.com/graphcommerce-org/graphcommerce/commit/cdc89cedb9eb4d37a2c37497689e74ff6df21bf6) - Set default value of `experimental_v2` to false in `useFormGql`, since we don't want an experimental feature as default ([@mikekeehnen](https://github.com/mikekeehnen))
-
-## 7.1.0-canary.21
-
-### Patch Changes
-
-- [#2093](https://github.com/graphcommerce-org/graphcommerce/pull/2093) [`112b041f0`](https://github.com/graphcommerce-org/graphcommerce/commit/112b041f01a33fbd521ce3eb3955844f96b29917) - Created a new experimental mutation abort feature inside `useFormGql`. This will allow redundant mutations to be canceled. This feature can be enabled via the `experimental_useV2` prop on the `useFormGql` component ([@mikekeehnen](https://github.com/mikekeehnen))
-
-## 7.1.0-canary.20
-
-## 7.1.0-canary.19
-
-## 7.1.0-canary.18
-
-## 7.1.0-canary.17
-
-## 7.1.0-canary.16
-
-## 7.1.0-canary.15
-
-## 7.1.0-canary.14
-
-## 7.1.0-canary.13
-
-## 7.1.0-canary.12
-
-## 7.1.0-canary.11
-
-## 7.1.0-canary.10
-
-## 7.1.0-canary.9
-
-### Patch Changes
-
-- [#2007](https://github.com/graphcommerce-org/graphcommerce/pull/2007) [`f59c27660`](https://github.com/graphcommerce-org/graphcommerce/commit/f59c276605f9ed649d1197a9ba0e3f12d7c6d026) - Reconstruct crosssells behaviour. Add submitted variables & showSuccess to RHF ([@JoshuaS98](https://github.com/JoshuaS98))
-
-## 7.1.0-canary.8
-
-## 7.0.2-canary.7
-
-## 7.0.2-canary.6
-
-## 7.0.2-canary.5
+- [#2007](https://github.com/graphcommerce-org/graphcommerce/pull/2007) [`f59c276`](https://github.com/graphcommerce-org/graphcommerce/commit/f59c276605f9ed649d1197a9ba0e3f12d7c6d026) - Crosssell behavior now properly shows for the latest added product. Added latest submitted variables to be retrieved when using the useFormGql hook. ([@JoshuaS98](https://github.com/JoshuaS98))
 
 ## 7.0.1
-
-### Patch Changes
-
-- [#2047](https://github.com/graphcommerce-org/graphcommerce/pull/2047) [`136580b39`](https://github.com/graphcommerce-org/graphcommerce/commit/136580b39e3cffdd07e3fa087e049bd532c3e8f1) - Updated all dependencies to the latest version where possible. ([@paales](https://github.com/paales))
-
-## 7.0.1-canary.15
-
-## 7.0.1-canary.14
-
-## 7.0.1-canary.13
-
-## 7.0.1-canary.12
-
-## 7.0.1-canary.11
-
-## 7.0.1-canary.10
-
-## 7.0.1-canary.9
-
-## 7.0.1-canary.8
-
-## 7.0.1-canary.7
-
-## 7.0.1-canary.6
-
-## 7.0.1-canary.5
-
-## 7.0.1-canary.4
-
-## 7.0.1-canary.3
-
-## 7.0.1-canary.2
-
-## 7.0.1-canary.1
-
-## 7.0.1-canary.0
 
 ### Patch Changes
 
@@ -395,411 +92,11 @@
 
 - [#2012](https://github.com/graphcommerce-org/graphcommerce/pull/2012) [`1dbb3ae13`](https://github.com/graphcommerce-org/graphcommerce/commit/1dbb3ae13553992ee1ed77f375375560f28c418c) - Upgrade graphql to 16.7.1, add graphql as peer dependency ([@Giovanni-Schroevers](https://github.com/Giovanni-Schroevers))
 
-## 6.2.0-canary.98
-
-## 6.2.0-canary.97
-
-## 6.2.0-canary.96
-
-## 6.2.0-canary.95
-
-## 6.2.0-canary.94
-
-## 6.2.0-canary.93
-
-## 6.2.0-canary.92
-
-## 6.2.0-canary.91
-
-## 6.2.0-canary.90
-
-## 6.2.0-canary.89
-
-## 6.2.0-canary.88
-
-## 6.2.0-canary.87
-
-## 6.2.0-canary.86
-
-## 6.2.0-canary.85
-
-## 6.2.0-canary.84
-
-## 6.2.0-canary.83
-
-## 6.2.0-canary.82
-
-## 6.2.0-canary.81
-
-## 6.2.0-canary.80
-
-## 6.2.0-canary.79
-
-## 6.2.0-canary.78
-
-## 6.2.0-canary.77
-
-## 6.2.0-canary.76
-
-## 6.2.0-canary.75
-
-## 6.2.0-canary.74
-
-## 6.2.0-canary.73
-
-## 6.2.0-canary.72
-
-## 6.2.0-canary.71
-
-## 6.2.0-canary.70
-
-## 6.2.0-canary.69
-
-### Patch Changes
-
-- [#2012](https://github.com/graphcommerce-org/graphcommerce/pull/2012) [`1dbb3ae13`](https://github.com/graphcommerce-org/graphcommerce/commit/1dbb3ae13553992ee1ed77f375375560f28c418c) - Upgrade graphql to 16.7.1, add graphql as peer dependency ([@Giovanni-Schroevers](https://github.com/Giovanni-Schroevers))
-
-## 6.2.0-canary.68
-
-## 6.2.0-canary.67
-
-### Patch Changes
-
-- [#2002](https://github.com/graphcommerce-org/graphcommerce/pull/2002) [`1234bb61f`](https://github.com/graphcommerce-org/graphcommerce/commit/1234bb61f8332da8a9e4dd7262b0c70beaed8c91) - Updated next and apollo/client ([@paales](https://github.com/paales))
-
-## 6.2.0-canary.66
-
-## 6.2.0-canary.65
-
-## 6.2.0-canary.64
-
-## 6.2.0-canary.63
-
-## 6.2.0-canary.62
-
-## 6.2.0-canary.61
-
-## 6.2.0-canary.60
-
-## 6.2.0-canary.59
-
-## 6.2.0-canary.58
-
-## 6.2.0-canary.57
-
-## 6.2.0-canary.56
-
-## 6.2.0-canary.55
-
-## 6.2.0-canary.54
-
-## 6.2.0-canary.53
-
-## 6.2.0-canary.52
-
-## 6.2.0-canary.51
-
-## 6.2.0-canary.50
-
-### Minor Changes
-
-- [`e55d8c390`](https://github.com/graphcommerce-org/graphcommerce/commit/e55d8c390d90b4bb7bab11c6a99027ac72bd7e3e) - Created a new sidebar layout system, can be configured with productFiltersLayout in the graphcommerce.config.js ([@paales](https://github.com/paales))
-
-## 6.2.0-canary.49
-
-## 6.2.0-canary.48
-
-## 6.2.0-canary.47
-
-## 6.2.0-canary.46
-
-## 6.2.0-canary.45
-
-## 6.2.0-canary.44
-
-## 6.2.0-canary.43
-
-## 6.2.0-canary.42
-
-## 6.2.0-canary.41
-
-### Patch Changes
-
-- [#1960](https://github.com/graphcommerce-org/graphcommerce/pull/1960) [`f78caf5a8`](https://github.com/graphcommerce-org/graphcommerce/commit/f78caf5a83683f1ae4b901fb94bd22d50943fa2f) - Updated packages @apollo/client, react-hook-form, @emotion/\*, @lingui/\*, @mui/\* and various others. ([@paales](https://github.com/paales))
-
-## 6.2.0-canary.40
-
-## 6.2.0-canary.39
-
-## 6.2.0-canary.38
-
-## 6.2.0-canary.37
-
-## 6.2.0-canary.36
-
-## 6.2.0-canary.35
-
-## 6.2.0-canary.34
-
-## 6.2.0-canary.33
-
-## 6.2.0-canary.32
-
-## 6.2.0-canary.31
-
-## 6.2.0-canary.30
-
-## 6.2.0-canary.29
-
-## 6.2.0-canary.28
-
-## 6.2.0-canary.27
-
-## 6.2.0-canary.26
-
-## 6.2.0-canary.25
-
-## 6.2.0-canary.24
-
-## 6.2.0-canary.23
-
-## 6.2.0-canary.22
-
-## 6.2.0-canary.21
-
-## 6.2.0-canary.20
-
-## 6.2.0-canary.19
-
-## 6.2.0-canary.18
-
-## 6.2.0-canary.17
-
-## 6.2.0-canary.16
-
-## 6.2.0-canary.15
-
-## 6.2.0-canary.14
-
-## 6.2.0-canary.13
-
-## 6.2.0-canary.12
-
-## 6.2.0-canary.11
-
-## 6.2.0-canary.10
-
-## 6.2.0-canary.9
-
-## 6.2.0-canary.8
-
-## 6.2.0-canary.7
-
-## 6.2.0-canary.6
-
-## 6.1.1-canary.5
-
-## 6.1.1-canary.4
-
-## 6.1.1-canary.3
-
-## 6.1.1-canary.2
-
-## 6.1.1-canary.1
-
-## 6.1.1-canary.0
-
-## 6.1.0
-
-## 6.0.2-canary.22
-
-## 6.0.2-canary.21
-
-## 6.0.2-canary.20
-
-## 6.0.2-canary.19
-
-## 6.0.2-canary.18
-
-## 6.0.2-canary.17
-
-## 6.0.2-canary.16
-
-## 6.0.2-canary.15
-
-## 6.0.2-canary.14
-
-## 6.0.2-canary.13
-
-## 6.0.2-canary.12
-
-## 6.0.2-canary.11
-
-## 6.0.2-canary.10
-
-## 6.0.2-canary.9
-
-## 6.0.2-canary.8
-
-## 6.0.2-canary.7
-
-## 6.0.2-canary.6
-
-## 6.0.2-canary.5
-
-## 6.0.2-canary.4
-
-## 6.0.2-canary.3
-
-## 6.0.2-canary.2
-
-## 6.0.2-canary.1
-
-## 6.0.2-canary.0
-
 ## 6.0.1
 
 ### Patch Changes
 
 - [#1859](https://github.com/graphcommerce-org/graphcommerce/pull/1859) [`08ea612a1`](https://github.com/graphcommerce-org/graphcommerce/commit/08ea612a1d26166b8e55f20525c1004642cc85aa) - Resolved multiple onSubmitSuccessful callbacks in ComposedForm, when we have multiple ComposedForm Components on a page ([@mikekeehnen](https://github.com/mikekeehnen))
-
-## 6.0.1-canary.7
-
-## 6.0.1-canary.6
-
-## 6.0.1-canary.5
-
-## 6.0.1-canary.4
-
-## 6.0.1-canary.3
-
-## 6.0.1-canary.2
-
-### Patch Changes
-
-- [#1859](https://github.com/graphcommerce-org/graphcommerce/pull/1859) [`08ea612a1`](https://github.com/graphcommerce-org/graphcommerce/commit/08ea612a1d26166b8e55f20525c1004642cc85aa) - Resolved multiple onSubmitSuccessful callbacks in ComposedForm, when we have multiple ComposedForm Components on a page ([@mikekeehnen](https://github.com/mikekeehnen))
-
-## 6.0.1-canary.1
-
-## 6.0.1-canary.0
-
-## 6.0.0
-
-## 6.0.0-canary.54
-
-## 6.0.0-canary.53
-
-## 6.0.0-canary.52
-
-## 6.0.0-canary.51
-
-## 6.0.0-canary.50
-
-## 6.0.0-canary.49
-
-## 6.0.0-canary.48
-
-## 6.0.0-canary.47
-
-## 6.0.0-canary.46
-
-## 6.0.0-canary.45
-
-## 6.0.0-canary.44
-
-## 6.0.0-canary.43
-
-## 6.0.0-canary.42
-
-## 6.0.0-canary.41
-
-## 6.0.0-canary.40
-
-## 6.0.0-canary.39
-
-## 6.0.0-canary.38
-
-## 6.0.0-canary.37
-
-## 6.0.0-canary.36
-
-## 6.0.0-canary.35
-
-## 6.0.0-canary.34
-
-## 6.0.0-canary.33
-
-## 6.0.0-canary.32
-
-## 6.0.0-canary.31
-
-## 6.0.0-canary.30
-
-## 6.0.0-canary.29
-
-## 6.0.0-canary.28
-
-## 6.0.0-canary.27
-
-## 6.0.0-canary.26
-
-## 6.0.0-canary.25
-
-## 6.0.0-canary.24
-
-## 6.0.0-canary.23
-
-## 6.0.0-canary.22
-
-## 6.0.0-canary.21
-
-## 6.0.0-canary.20
-
-## 5.2.0-canary.19
-
-## 5.2.0-canary.18
-
-## 5.2.0-canary.17
-
-## 5.2.0-canary.16
-
-## 5.2.0-canary.15
-
-## 5.2.0-canary.14
-
-## 5.2.0-canary.13
-
-## 5.2.0-canary.12
-
-## 5.2.0-canary.11
-
-## 5.2.0-canary.10
-
-## 5.2.0-canary.9
-
-## 5.2.0-canary.8
-
-## 5.2.0-canary.7
-
-## 5.2.0-canary.6
-
-## 5.2.0-canary.5
-
-## 5.2.0-canary.4
-
-## 5.2.0-canary.3
-
-## 5.2.0-canary.2
-
-## 5.2.0-canary.1
-
-## 5.2.0-canary.0
-
-## 5.1.1
-
-## 5.1.1-canary.1
-
-## 5.1.1-canary.0
 
 ## 5.1.0
 
@@ -812,88 +109,17 @@
   - Upgraded dependencies including type-fest and graphql-mesh
   - Solved peer dependency issues ([@paales](https://github.com/paales))
 
-## 5.1.0-canary.11
-
-## 5.1.0-canary.10
-
-## 5.1.0-canary.9
-
-## 5.1.0-canary.8
-
-## 5.1.0-canary.7
-
-## 5.1.0-canary.6
-
-## 5.1.0-canary.5
-
-## 5.1.0-canary.4
-
-## 5.1.0-canary.3
-
-### Patch Changes
-
-- [#1752](https://github.com/graphcommerce-org/graphcommerce/pull/1752) [`2a6a4d9ec`](https://github.com/graphcommerce-org/graphcommerce/commit/2a6a4d9ecfa1b58a66ba9b9d00016d6feda9aa95) - Updated dependencies to latest versions, except for nextjs; Solve tons of peer dependency issues.
-
-  - Updated the @mui/material package
-  - Removed dependencies on react-hook-form-mui and @playwright/test
-  - Upgraded dependencies including type-fest and graphql-mesh
-  - Solved peer dependency issues ([@paales](https://github.com/paales))
-
-## 5.1.0-canary.2
-
-## 5.1.0-canary.1
-
-## 5.1.0-canary.0
-
 ## 5.0.0
 
 ### Major Changes
 
 - [#1734](https://github.com/graphcommerce-org/graphcommerce/pull/1734) [`e4c7fe17e`](https://github.com/graphcommerce-org/graphcommerce/commit/e4c7fe17e413e37362ceae92e67f1b3a5f62d398) - Bump major version of all packages ([@github-actions](https://github.com/apps/github-actions))
 
-## 5.0.0-canary.14
-
-## 5.0.0-canary.9
-
-### Major Changes
-
-- [`e4c7fe17e`](https://github.com/graphcommerce-org/graphcommerce/commit/e4c7fe17e413e37362ceae92e67f1b3a5f62d398) - Bump major version of all packages ([@paales](https://github.com/paales))
-
-## 4.31.0-canary.8
-
-## 4.31.0-canary.7
-
-## 4.31.0-canary.6
-
-## 4.31.0-canary.5
-
-## 4.31.0-canary.4
-
-## 4.31.0-canary.3
-
-## 4.31.0-canary.2
-
-## 4.31.0-canary.1
-
-## 4.31.0-canary.0
-
-## 4.30.2
-
-## 4.30.1
-
 ## 4.30.0
 
 ### Patch Changes
 
 - [#1702](https://github.com/graphcommerce-org/graphcommerce/pull/1702) [`abb15ef4a`](https://github.com/graphcommerce-org/graphcommerce/commit/abb15ef4a79b12eddb32cc006e5d1d31dd06ac2d) Thanks [@paales](https://github.com/paales)! - Added canary releases to GraphCommerce
-
-## 4.30.0-canary.1
-
-### Patch Changes
-
-- [`abb15ef4a`](https://github.com/graphcommerce-org/graphcommerce/commit/abb15ef4a79b12eddb32cc006e5d1d31dd06ac2d) Thanks [@paales](https://github.com/paales)! - Added canary releases to GraphCommerce
-
-## 4.30.0-canary.0
 
 ## 3.3.5
 

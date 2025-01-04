@@ -1,12 +1,13 @@
 import { PageOptions } from '@graphcommerce/framer-next-pages'
+import { cacheFirst } from '@graphcommerce/graphql'
 import { StoreConfigDocument } from '@graphcommerce/magento-store'
 import { GetStaticProps, LayoutTitle } from '@graphcommerce/next-ui'
+import { i18n } from '@lingui/core'
 import { Container, Divider, Link } from '@mui/material'
 import { GetStaticPaths } from 'next'
 import { LayoutDocument, LayoutNavigation, LayoutNavigationProps } from '../../components'
 import { graphqlSsrClient, graphqlSharedClient } from '../../lib/graphql/graphqlSsrClient'
 import { LayoutDemo } from './minimal-page-shell/[[...url]]'
-import { i18n } from '@lingui/core'
 
 type Props = { url: string }
 type RouteProps = { url: string[] }
@@ -57,14 +58,18 @@ export const getStaticPaths: GetPageStaticPaths = async ({ locales = [] }) => {
   return { paths, fallback: 'blocking' }
 }
 
-export const getStaticProps: GetPageStaticProps = async ({ params, locale }) => {
+export const getStaticProps: GetPageStaticProps = async (context) => {
+  const { params } = context
   const url = (params?.url ?? ['index']).join('/') ?? ''
 
-  const client = graphqlSharedClient(locale)
-  const staticClient = graphqlSsrClient(locale)
+  const client = graphqlSharedClient(context)
+  const staticClient = graphqlSsrClient(context)
 
   const conf = client.query({ query: StoreConfigDocument })
-  const layout = staticClient.query({ query: LayoutDocument, fetchPolicy: 'cache-first' })
+  const layout = staticClient.query({
+    query: LayoutDocument,
+    fetchPolicy: cacheFirst(staticClient),
+  })
 
   return {
     props: {

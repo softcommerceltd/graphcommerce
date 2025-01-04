@@ -1,15 +1,10 @@
-import {
-  ApolloErrorSnackbar,
-  TextFieldElement,
-  useFormGqlMutation,
-} from '@graphcommerce/ecommerce-ui'
-import { Form, MessageSnackbar, Button } from '@graphcommerce/next-ui'
-import { i18n } from '@lingui/core'
+import { ApolloErrorSnackbar, EmailElement, useFormGqlMutation } from '@graphcommerce/ecommerce-ui'
+import { Button, Form, MessageSnackbar } from '@graphcommerce/next-ui'
 import { Trans } from '@lingui/react'
-import { SxProps, Theme } from '@mui/material'
+import type { SxProps, Theme } from '@mui/material'
 import { GuestNewsletterToggleDocument } from '../GuestNewsletterToggle/GuestNewsletterToggle.gql'
 
-type GuestNewsletterProps = {
+export type GuestNewsletterProps = {
   sx?: SxProps<Theme>
 }
 
@@ -28,15 +23,12 @@ export function GuestNewsletter(props: GuestNewsletterProps) {
       onSubmit={submit}
       sx={[(theme) => ({ gap: theme.spacings.xs }), ...(Array.isArray(sx) ? sx : [sx])]}
     >
-      <TextFieldElement
-        required
-        variant='outlined'
-        type='email'
-        label={i18n._(/* i18n */ 'Email address')}
+      <EmailElement
         control={control}
         name='email'
+        required
+        variant='outlined'
         size='medium'
-        inputProps={{ autoComplete: 'email' }}
         disabled={submittedWithoutErrors}
       />
 

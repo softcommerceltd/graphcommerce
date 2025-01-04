@@ -1,18 +1,15 @@
 import { Image } from '@graphcommerce/image'
 import { AddProductsToCartForm, useProductLink } from '@graphcommerce/magento-product'
 import { Money } from '@graphcommerce/magento-store'
-import { InputMaybe } from '@graphcommerce/next-config'
-import {
-  responsiveVal,
-  extendableComponent,
-  ActionCard,
-  ActionCardProps,
-} from '@graphcommerce/next-ui'
+import type { InputMaybe } from '@graphcommerce/next-config'
+import type { ActionCardProps } from '@graphcommerce/next-ui'
+import { ActionCard, actionCardImageSizes, extendableComponent } from '@graphcommerce/next-ui'
 import { Trans } from '@lingui/react'
-import { Button, Link, SxProps, Theme } from '@mui/material'
-import { ReactNode } from 'react'
+import type { SxProps, Theme, ButtonProps } from '@mui/material'
+import { Button, Link } from '@mui/material'
+import type { ReactNode } from 'react'
 import { useRemoveProductsFromWishlist } from '../../hooks'
-import { WishlistItemFragment } from '../../queries/WishlistItem.gql'
+import type { WishlistItemFragment } from '../../queries/WishlistItem.gql'
 import { AddWishlistItemToCart } from '../WishlistItem/AddWishlistItemToCart'
 
 export type WishlistItemActionCardProps = {
@@ -21,10 +18,11 @@ export type WishlistItemActionCardProps = {
   selectedOptions?: InputMaybe<string[]> | undefined
   isConfigurableUncompleted?: boolean
   secondaryAction?: ReactNode
+  actionButtonProps?: ButtonProps
 } & OwnerState &
   Omit<ActionCardProps, 'value' | 'image' | 'price' | 'title' | 'action'>
 type OwnerState = { withOptions?: boolean }
-const compName = 'WishlistItemActionCard' as const
+const compName = 'WishlistItemActionCard'
 const parts = [
   'item',
   'picture',
@@ -38,12 +36,6 @@ const parts = [
 ] as const
 const { classes } = extendableComponent<OwnerState, typeof compName, typeof parts>(compName, parts)
 
-export const productImageSizes = {
-  small: responsiveVal(60, 80),
-  medium: responsiveVal(60, 80),
-  large: responsiveVal(100, 120),
-}
-
 const typographySizes = {
   small: 'body2',
   medium: 'body1',
@@ -53,11 +45,12 @@ const typographySizes = {
 export function WishlistItemActionCard(props: WishlistItemActionCardProps) {
   const {
     sx = [],
-    size = 'large',
+    size = 'responsive',
     item,
     selectedOptions,
     secondaryAction,
     variant = 'default',
+    actionButtonProps,
     ...rest
   } = props
   const { id, product } = item
@@ -87,6 +80,11 @@ export function WishlistItemActionCard(props: WishlistItemActionCardProps) {
             '&.sizeSmall': {
               px: 0,
             },
+            '&.sizeResponsive': {
+              [theme.breakpoints.down('md')]: {
+                px: 0,
+              },
+            },
             '& .ActionCard-action': {
               alignSelf: 'flex-end',
             },
@@ -94,7 +92,14 @@ export function WishlistItemActionCard(props: WishlistItemActionCardProps) {
               alignSelf: 'flex-start',
             },
             '& .ActionCard-secondaryAction': {
-              typography: typographySizes[size],
+              typography:
+                size === 'responsive'
+                  ? {
+                      xs: typographySizes.small,
+                      md: typographySizes.medium,
+                      lg: typographySizes.large,
+                    }
+                  : typographySizes[size],
               display: 'flex',
               alignItems: 'center',
               color: 'text.secondary',
@@ -103,7 +108,14 @@ export function WishlistItemActionCard(props: WishlistItemActionCardProps) {
               justifyContent: 'start',
             },
             '& .ActionCard-price': {
-              typography: typographySizes[size],
+              typography:
+                size === 'responsive'
+                  ? {
+                      xs: typographySizes.small,
+                      md: typographySizes.medium,
+                      lg: typographySizes.large,
+                    }
+                  : typographySizes[size],
               mb: { xs: 0.5, sm: 0 },
             },
           }),
@@ -117,12 +129,12 @@ export function WishlistItemActionCard(props: WishlistItemActionCardProps) {
               src={product?.small_image?.url}
               sx={{
                 objectFit: 'contain',
-                width: productImageSizes[size],
-                height: productImageSizes[size],
+                width: actionCardImageSizes[size],
+                height: actionCardImageSizes[size],
                 display: 'block',
                 borderRadius: 1,
               }}
-              sizes={productImageSizes[size]}
+              sizes={actionCardImageSizes[size]}
             />
           )
         }
@@ -159,6 +171,7 @@ export function WishlistItemActionCard(props: WishlistItemActionCardProps) {
             size='medium'
             type='button'
             onClick={() => remove([id])}
+            {...actionButtonProps}
           >
             <Trans id='Remove' />
           </Button>

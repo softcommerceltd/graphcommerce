@@ -1,6 +1,10 @@
 import { PageOptions } from '@graphcommerce/framer-next-pages'
 import { useQuery } from '@graphcommerce/graphql'
-import { ApolloCustomerErrorFullPage, CustomerDocument } from '@graphcommerce/magento-customer'
+import {
+  ApolloCustomerErrorFullPage,
+  CustomerDocument,
+  getCustomerAccountIsDisabled,
+} from '@graphcommerce/magento-customer'
 import {
   ProductReviewProductNameDocument,
   CreateProductReviewForm,
@@ -103,8 +107,10 @@ AccountReviewsAddPage.pageOptions = pageOptions
 
 export default AccountReviewsAddPage
 
-export const getStaticProps: GetPageStaticProps = async ({ locale }) => {
-  const client = graphqlSharedClient(locale)
+export const getStaticProps: GetPageStaticProps = async (context) => {
+  if (getCustomerAccountIsDisabled(context.locale)) return { notFound: true }
+
+  const client = graphqlSharedClient(context)
   const conf = client.query({ query: StoreConfigDocument })
 
   return {

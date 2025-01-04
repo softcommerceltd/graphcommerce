@@ -1,15 +1,18 @@
 import { ApolloErrorAlert, PasswordRepeatElement } from '@graphcommerce/ecommerce-ui'
+import { useQuery } from '@graphcommerce/graphql'
 import { graphqlErrorByCategory } from '@graphcommerce/magento-graphql'
-import { Button, extendableComponent, Form, FormRow } from '@graphcommerce/next-ui'
+import { StoreConfigDocument } from '@graphcommerce/magento-store'
+import { Button, Form, FormRow, extendableComponent } from '@graphcommerce/next-ui'
 import { useFormGqlMutation } from '@graphcommerce/react-hook-form'
 import { Trans } from '@lingui/react'
 import { Alert, Box } from '@mui/material'
 import React from 'react'
 import { useSignInForm } from '../../hooks/useSignInForm'
 import { ValidatedPasswordElement } from '../ValidatedPasswordElement/ValidatedPasswordElement'
-import { SignUpMutationVariables, SignUpMutation, SignUpDocument } from './SignUp.gql'
+import type { SignUpMutation, SignUpMutationVariables } from './SignUp.gql'
+import { SignUpDocument } from './SignUp.gql'
 
-type SignUpFormInlineProps = Pick<SignUpMutationVariables, 'email'> & {
+export type SignUpFormInlineProps = Pick<SignUpMutationVariables, 'email'> & {
   children?: React.ReactNode
   firstname?: string
   lastname?: string
@@ -23,11 +26,10 @@ const { classes } = extendableComponent('SignUpFormInline', [
   'buttonContainer',
 ] as const)
 
-const requireEmailValidation = import.meta.graphCommerce.customerRequireEmailConfirmation ?? false
-
 export function SignUpFormInline(props: SignUpFormInlineProps) {
   const { email, children, firstname, lastname, onSubmitted } = props
 
+  const storeConfig = useQuery(StoreConfigDocument)
   const signIn = useSignInForm({ email })
   const form = useFormGqlMutation<
     SignUpMutation,
@@ -44,7 +46,7 @@ export function SignUpFormInline(props: SignUpFormInlineProps) {
       },
       onBeforeSubmit: (values) => ({ ...values, email }),
       onComplete: async (result, variables) => {
-        if (!result.errors && !requireEmailValidation) {
+        if (!result.errors && !storeConfig.data?.storeConfig?.create_account_confirmation) {
           signIn.setValue('email', variables.email)
           signIn.setValue('password', variables.password)
           await signIn.handleSubmit(() => {})()
@@ -59,10 +61,17 @@ export function SignUpFormInline(props: SignUpFormInlineProps) {
   const [remainingError, inputError] = graphqlErrorByCategory({ category: 'graphql-input', error })
   const submitHandler = handleSubmit(() => {})
 
-  if (requireEmailValidation && form.formState.isSubmitSuccessful) {
+  if (
+    storeConfig.data?.storeConfig?.create_account_confirmation &&
+    !error &&
+    form.formState.isSubmitSuccessful
+  ) {
     return (
       <Alert>
-        <Trans id='Please check your inbox to validate your email ({email})' values={{ email }} />
+        <Trans
+          id='Registration successful. Please check your inbox to confirm your email address ({email})'
+          values={{ email }}
+        />
       </Alert>
     )
   }

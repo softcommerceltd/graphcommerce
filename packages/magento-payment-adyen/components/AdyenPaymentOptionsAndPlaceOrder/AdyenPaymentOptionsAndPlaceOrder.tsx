@@ -1,18 +1,21 @@
 import { FormPersist, TextFieldElement, useFormCompose } from '@graphcommerce/ecommerce-ui'
 import { useFormGqlMutationCart } from '@graphcommerce/magento-cart'
+import type { PaymentOptionsProps } from '@graphcommerce/magento-cart-payment-method'
 import {
-  PaymentOptionsProps,
+  assertOrderPlaced,
+  throwGenericPlaceOrderError,
   usePaymentMethodContext,
 } from '@graphcommerce/magento-cart-payment-method'
 import { FormRow } from '@graphcommerce/next-ui'
+import { t } from '@lingui/macro'
 import { useRouter } from 'next/router'
 import { useAdyenCartLock } from '../../hooks/useAdyenCartLock'
 import { useAdyenPaymentMethod } from '../../hooks/useAdyenPaymentMethod'
-import {
+import type {
   AdyenPaymentOptionsAndPlaceOrderMutation,
   AdyenPaymentOptionsAndPlaceOrderMutationVariables,
-  AdyenPaymentOptionsAndPlaceOrderDocument,
 } from './AdyenPaymentOptionsAndPlaceOrder.gql'
+import { AdyenPaymentOptionsAndPlaceOrderDocument } from './AdyenPaymentOptionsAndPlaceOrder.gql'
 
 /** It sets the selected payment method on the cart. */
 export function HppOptions(props: PaymentOptionsProps) {
@@ -41,10 +44,19 @@ export function HppOptions(props: PaymentOptionsProps) {
       brandCode,
     }),
     onComplete: async (result) => {
+      assertOrderPlaced(result.data?.placeOrder)
       const merchantReference = result.data?.placeOrder?.order.order_number
       const action = result?.data?.placeOrder?.order.adyen_payment_status?.action
 
-      if (result.errors || !merchantReference || !selectedMethod?.code || !action) return
+      if (result.errors) return
+
+      if (!merchantReference || !selectedMethod?.code || !action) {
+        console.error(
+          'Adyen: Order was placed, but no merchant reference or action was returned, this is an issue on the Magento Adyen side.',
+          result,
+        )
+        throwGenericPlaceOrderError()
+      }
 
       const url = JSON.parse(action).url as string
       await lock({ method: selectedMethod.code, adyen: '1', merchantReference })
@@ -69,7 +81,6 @@ export function HppOptions(props: PaymentOptionsProps) {
    */
   return (
     <form key={key} onSubmit={submit} noValidate>
-      <FormPersist form={form} name={key} persist={['issuer']} storage='localStorage' />
       {conf?.issuers && (
         <FormRow>
           <TextFieldElement
@@ -102,6 +113,7 @@ export function HppOptions(props: PaymentOptionsProps) {
           </TextFieldElement>
         </FormRow>
       )}
+      <FormPersist form={form} name={key} persist={['issuer']} storage='localStorage' />
     </form>
   )
 }

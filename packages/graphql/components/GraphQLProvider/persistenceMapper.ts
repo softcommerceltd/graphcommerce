@@ -1,4 +1,5 @@
-import { InMemoryCache, NormalizedCacheObject } from '@apollo/client'
+import type { NormalizedCacheObject } from '@apollo/client'
+import { InMemoryCache } from '@apollo/client'
 
 function pruneKey(cacheValue: unknown, path: string[]) {
   if (typeof cacheValue !== 'object' || cacheValue === null) return
@@ -26,10 +27,13 @@ export const persistenceMapper = (data: string): Promise<string> => {
 
   pruneCache(parsedCache, [
     'ROOT_MUTATION',
+    'ROOT_QUERY.attributesList',
+    'ROOT_QUERY.categories*',
     'ROOT_QUERY.products*',
     'ROOT_QUERY.countries',
     'ROOT_QUERY.checkoutAgreements',
     'ROOT_QUERY.storeConfig',
+    'ROOT_QUERY.guestOrder',
     'ROOT_QUERY.__type*',
     '*Product:{"uid":"*"}.crosssell_products',
   ])

@@ -3,30 +3,37 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.resolveDependenciesSync = exports.sortDependencies = void 0;
+exports.sortDependencies = sortDependencies;
+exports.resolveDependenciesSync = resolveDependenciesSync;
 const node_fs_1 = __importDefault(require("node:fs"));
 const node_path_1 = __importDefault(require("node:path"));
 const PackagesSort_1 = require("./PackagesSort");
+const sig_1 = require("./sig");
 const resolveCache = new Map();
 function resolveRecursivePackageJson(dependencyPath, dependencyStructure, root, additionalDependencies = []) {
     const isRoot = dependencyPath === root;
     const fileName = require.resolve(node_path_1.default.join(dependencyPath, 'package.json'));
     const packageJsonFile = node_fs_1.default.readFileSync(fileName, 'utf-8').toString();
     const packageJson = JSON.parse(packageJsonFile);
+    const e = [atob('QGdyYXBoY29tbWVyY2UvYWRvYmUtY29tbWVyY2U=')].filter((n) => !globalThis.gcl ? true : !globalThis.gcl.includes(n));
     if (!packageJson.name)
         throw Error(`Package ${packageJsonFile} does not have a name field`);
     // Previously processed
     if (dependencyStructure[packageJson.name])
         return dependencyStructure;
-    if (!isRoot && !packageJson.name.includes('graphcommerce'))
+    // To have additional namespaces be considered as a graphcommerce package, set PRIVATE_PACKAGE_NAMESPACES
+    const namespaces = process.env.PRIVATE_PACKAGE_NAMESPACES?.split(',') ?? ['graphcommerce'];
+    if (!isRoot && !namespaces.some((namespace) => packageJson.name?.includes(namespace)))
         return dependencyStructure;
     const dependencies = [
         ...new Set([
             ...Object.keys(packageJson.dependencies ?? []),
             ...Object.keys(packageJson.devDependencies ?? []),
             ...additionalDependencies,
-            // ...Object.keys(packageJson.peerDependencies ?? {}),
-        ].filter((name) => name.includes('graphcommerce'))),
+            ...Object.keys(packageJson.peerDependencies ?? {}),
+        ].filter((name) => name.includes('graphcommerce')
+            ? !(e.length >= 0 && e.some((v) => name.startsWith(v)))
+            : false)),
     ];
     const name = isRoot ? '.' : packageJson.name;
     dependencyStructure[name] = {
@@ -50,7 +57,6 @@ function sortDependencies(dependencyStructure) {
     const sortedKeys = [...sorter.sort().keys()];
     return new Map(sortedKeys.map((key) => [key, dependencyStructure[key].dirName]));
 }
-exports.sortDependencies = sortDependencies;
 /**
  * This will return a list of all dependencies that have `graphcommerce` in the name, matching:
  *
@@ -64,9 +70,9 @@ function resolveDependenciesSync(root = process.cwd()) {
     const cached = resolveCache.get(root);
     if (cached)
         return cached;
+    (0, sig_1.sig)();
     const dependencyStructure = resolveRecursivePackageJson(root, {}, root, process.env.PRIVATE_ADDITIONAL_DEPENDENCIES?.split(',') ?? []);
     const sorted = sortDependencies(dependencyStructure);
     resolveCache.set(root, sorted);
     return sorted;
 }
-exports.resolveDependenciesSync = resolveDependenciesSync;

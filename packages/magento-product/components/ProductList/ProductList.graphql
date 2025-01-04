@@ -4,6 +4,9 @@ query ProductList(
   $filters: ProductAttributeFilterInput = {}
   $sort: ProductAttributeSortInput = {}
   $search: String = ""
+  $context: PrivateContext
+  $onlyItems: Boolean = false
+  $quickSearch: Boolean = false
 ) {
   products(
     pageSize: $pageSize
@@ -11,11 +14,12 @@ query ProductList(
     filter: $filters
     sort: $sort
     search: $search
-  ) {
-    ...ProductListFilters
-    ...ProductListCount
-    ...ProductListPagination
-    ...ProductListSort
+  ) @privateContext(context: $context) {
+    ...ProductListSuggestions @skip(if: $onlyItems)
+    ...ProductListFilters @skip(if: $onlyItems)
+    ...ProductListCount @skip(if: $onlyItems) @include(if: $quickSearch)
+    ...ProductListPagination @skip(if: $onlyItems)
+    ...ProductListSort @skip(if: $onlyItems)
     ...ProductListItems
   }
 }

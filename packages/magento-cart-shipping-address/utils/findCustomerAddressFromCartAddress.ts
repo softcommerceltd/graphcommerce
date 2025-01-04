@@ -1,5 +1,5 @@
-import { CartAddressFragment } from '@graphcommerce/magento-cart/components/CartAddress/CartAddress.gql'
-import { CustomerAddressFragment } from '@graphcommerce/magento-customer/components/CreateCustomerAddressForm/CustomerAddress.gql'
+import type { CartAddressFragment } from '@graphcommerce/magento-cart/components/CartAddress/CartAddress.gql'
+import type { CustomerAddressFragment } from '@graphcommerce/magento-customer/components/CreateCustomerAddressForm/CustomerAddress.gql'
 import { filterNonNullableKeys } from '@graphcommerce/next-ui'
 
 export function findCustomerAddressFromCartAddress<CustomerAddress extends CustomerAddressFragment>(
@@ -22,6 +22,8 @@ export function findCustomerAddressFromCartAddress<CustomerAddress extends Custo
         customerAddr.country_code === cartAddress.country.code,
         customerAddr.region?.region_code === cartAddress.region?.code,
         customerAddr.telephone === cartAddress.telephone,
+        customerAddr.company === cartAddress.company,
+        customerAddr.vat_id === cartAddress.vat_id,
       ].filter((v) => !v).length === 0,
   )
 }

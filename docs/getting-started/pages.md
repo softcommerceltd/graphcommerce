@@ -93,9 +93,9 @@ AboutUs.pageOptions = pageOptions
 
 export default AboutUs
 
-export const getStaticProps: GetPageStaticProps = async ({ locale }) => {
-  const client = graphqlSharedClient(locale)
-  const staticClient = graphqlSsrClient(locale)
+export const getStaticProps: GetPageStaticProps = async (context) => {
+  const client = graphqlSharedClient(context)
+  const staticClient = graphqlSsrClient(context)
 
   const conf = client.query({ query: StoreConfigDocument })
   const layout = staticClient.query({
@@ -152,7 +152,7 @@ import { PageOptions } from '@graphcommerce/framer-next-pages'
 import {
   hygraphPageContent,
   HygraphPagesQuery,
-} from '@graphcommerce/graphcms-ui'
+} from '@graphcommerce/hygraph-ui'
 import { StoreConfigDocument } from '@graphcommerce/magento-store'
 import {
   GetStaticProps,
@@ -210,9 +210,9 @@ AboutUs.pageOptions = pageOptions
 
 export default AboutUs
 
-export const getStaticProps: GetPageStaticProps = async ({ locale }) => {
-  const client = graphqlSharedClient(locale)
-  const staticClient = graphqlSsrClient(locale)
+export const getStaticProps: GetPageStaticProps = async (context) => {
+  const client = graphqlSharedClient(context)
+  const staticClient = graphqlSsrClient(context)
 
   const conf = client.query({ query: StoreConfigDocument })
   const page = hygraphPageContent(staticClient, 'about/about-us')
@@ -259,12 +259,10 @@ export const getStaticPaths: GetPageStaticPaths = (context) => ({
   fallback: 'blocking',
 })
 
-export const getStaticProps: GetPageStaticProps = async ({
-  locale,
-  params,
-}) => {
-  const client = graphqlSharedClient(locale)
-  const staticClient = graphqlSsrClient(locale)
+export const getStaticProps: GetPageStaticProps = async (context) => {
+  const { params } = context
+  const client = graphqlSharedClient(context)
+  const staticClient = graphqlSsrClient(context)
 
   const conf = client.query({ query: StoreConfigDocument })
   const page = hygraphPageContent(staticClient, `about/${params?.url}`)
